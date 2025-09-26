@@ -1,0 +1,29 @@
+name: nail_schedule_app
+description: Nail schedule app with Drift + Riverpod
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.1.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.19.0
+  flutter_riverpod: ^2.5.1
+  provider: ^6.0.0
+  drift: ^2.13.0
+  path_provider: ^2.1.3
+  path: ^1.9.0
+  uuid: ^4.4.0
+  sqlite3_flutter_libs: ^0.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  drift_dev: ^2.13.0
+  build_runner: ^2.4.11
+
+flutter:
+  uses-material-design: true
