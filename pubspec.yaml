@@ -1,5 +1,5 @@
 name: note_work
-description: Nail schedule app with Drift + Riverpod
+description: Note wor app with Drift + Riverpod
 publish_to: "none"
 
 version: 1.0.0+1
