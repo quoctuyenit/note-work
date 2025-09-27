@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nail_schedule_app/providers/booking_provider.dart';
-import 'package:nail_schedule_app/ui/widgets/day_item.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
+import 'package:note_work/providers/booking_provider.dart';
+import 'package:note_work/ui/widgets/day_item.dart';
+import 'package:note_work/database/app_database.dart';
 
 class InProcessingTab extends ConsumerWidget {
   const InProcessingTab({super.key});

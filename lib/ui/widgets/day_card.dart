@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
-import 'package:nail_schedule_app/repository/booking_repository.dart';
-import 'package:nail_schedule_app/ui/screens/add_slot_dialog.dart';
+import 'package:note_work/database/app_database.dart';
+import 'package:note_work/repository/booking_repository.dart';
+import 'package:note_work/ui/screens/add_slot_dialog.dart';
 
 class DayCard extends StatefulWidget {
   final BookingRepository repo;

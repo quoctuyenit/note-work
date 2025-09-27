@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
-import 'package:nail_schedule_app/ui/screens/add_slot_dialog.dart';
+import 'package:note_work/database/app_database.dart';
+import 'package:note_work/ui/screens/add_slot_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nail_schedule_app/providers/booking_provider.dart';
+import 'package:note_work/providers/booking_provider.dart';
 
 class DayItem extends ConsumerStatefulWidget {
   final BookingDay day;

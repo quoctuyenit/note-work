@@ -1,5 +1,5 @@
 import 'package:uuid/uuid.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
+import 'package:note_work/database/app_database.dart';
 import 'package:drift/drift.dart';
 
 class BookingRepository {

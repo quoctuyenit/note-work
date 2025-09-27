@@ -1,4 +1,4 @@
-# nail_schedule_app
+# note_work
 
 A new Flutter project.
 

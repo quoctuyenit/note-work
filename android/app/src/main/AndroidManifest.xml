@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="nail_schedule_app"
+        android:label="note_work"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

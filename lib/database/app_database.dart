@@ -1,8 +1,5 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'open_connection.dart';
 
 part 'app_database.g.dart';
 
@@ -20,25 +17,21 @@ class BookingSlots extends Table {
   TextColumn get dayId => text().references(BookingDays, #id)();
   TextColumn get time => text()(); // "HH:mm"
   TextColumn get customerName => text().nullable()();
-  TextColumn get note => text().nullable()(); // **MỚI**
-  @override
-  Set<Column> get primaryKey => {id};
+  TextColumn get note => text().nullable()();
 }
 
 class DefaultSlots extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get time => text()();
-  @override
-  Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(tables: [BookingDays, BookingSlots, DefaultSlots])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(openConnection());
 
   // bump schema version
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 1;
 
   // migration: thêm cột note cho bookingSlots nếu nâng version
   @override
@@ -55,7 +48,8 @@ class AppDatabase extends _$AppDatabase {
       into(bookingDays).insert(entry);
 
   Future<List<BookingDay>> getAllBookingDays() =>
-      (select(bookingDays)..orderBy([(t) => OrderingTerm(expression: t.date)])).get();
+      (select(bookingDays)..orderBy([(t) => OrderingTerm(expression: t.date)]))
+          .get();
 
   Future<BookingDay?> getDayByDate(DateTime dateOnly) async {
     final all = await getAllBookingDays();
@@ -80,11 +74,10 @@ class AppDatabase extends _$AppDatabase {
   Future<int> insertBookingSlot(BookingSlotsCompanion entry) =>
       into(bookingSlots).insert(entry);
 
-  Future<List<BookingSlot>> getSlotsByDay(String dayId) =>
-      (select(bookingSlots)
-            ..where((t) => t.dayId.equals(dayId))
-            ..orderBy([(t) => OrderingTerm(expression: t.time)]))
-          .get();
+  Future<List<BookingSlot>> getSlotsByDay(String dayId) => (select(bookingSlots)
+        ..where((t) => t.dayId.equals(dayId))
+        ..orderBy([(t) => OrderingTerm(expression: t.time)]))
+      .get();
 
   Future<BookingSlot> getSlotById(int id) =>
       (select(bookingSlots)..where((t) => t.id.equals(id))).getSingle();
@@ -96,7 +89,8 @@ class AppDatabase extends _$AppDatabase {
       (delete(bookingSlots)..where((t) => t.id.equals(id))).go();
 
   // check slot exists in day (add)
-  Future<bool> slotExistsInDay({required String dayId, required String time}) async {
+  Future<bool> slotExistsInDay(
+      {required String dayId, required String time}) async {
     final q = await (select(bookingSlots)
           ..where((t) => t.dayId.equals(dayId) & t.time.equals(time)))
         .get();
@@ -111,7 +105,9 @@ class AppDatabase extends _$AppDatabase {
   }) async {
     final q = await (select(bookingSlots)
           ..where((t) =>
-              t.dayId.equals(dayId) & t.time.equals(time) & t.id.isNotValue(excludeId)))
+              t.dayId.equals(dayId) &
+              t.time.equals(time) &
+              t.id.isNotValue(excludeId)))
         .get();
     return q.isNotEmpty;
   }
@@ -121,16 +117,9 @@ class AppDatabase extends _$AppDatabase {
       into(defaultSlots).insert(entry);
 
   Future<List<DefaultSlot>> getAllDefaultSlots() =>
-      (select(defaultSlots)..orderBy([(t) => OrderingTerm(expression: t.time)])).get();
+      (select(defaultSlots)..orderBy([(t) => OrderingTerm(expression: t.time)]))
+          .get();
 
   Future<void> deleteDefaultSlot(int id) =>
       (delete(defaultSlots)..where((t) => t.id.equals(id))).go();
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'app.sqlite'));
-    return NativeDatabase(file);
-  });
 }

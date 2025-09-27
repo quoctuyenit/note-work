@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nail_schedule_app/repository/booking_repository.dart';
-import 'package:nail_schedule_app/ui/widgets/time_text_formatter.dart';
+import 'package:note_work/repository/booking_repository.dart';
+import 'package:note_work/ui/widgets/time_text_formatter.dart';
 
 class AddOrEditSlotDialog extends StatefulWidget {
   final BookingRepository repo;

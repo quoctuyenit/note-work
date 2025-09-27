@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nail_schedule_app/providers/booking_provider.dart';
-import 'package:nail_schedule_app/ui/screens/settings_screen.dart';
-import 'package:nail_schedule_app/ui/tabs/complete_tab.dart';
-import 'package:nail_schedule_app/ui/tabs/in_processing_tab.dart';
-import 'package:nail_schedule_app/ui/widgets/search_customer_delegate.dart';
+import 'package:note_work/providers/booking_provider.dart';
+import 'package:note_work/ui/screens/settings_screen.dart';
+import 'package:note_work/ui/tabs/complete_tab.dart';
+import 'package:note_work/ui/tabs/in_processing_tab.dart';
+import 'package:note_work/ui/widgets/search_customer_delegate.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
