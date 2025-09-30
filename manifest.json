@@ -1,6 +1,7 @@
 {
-    "name": "note_work",
-    "short_name": "note_work",
+    "name": "Note work",
+    "version": "1.0",
+    "short_name": "Note work",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
