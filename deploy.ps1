@@ -20,6 +20,9 @@ flutter build web --base-href "/note-work/"
 # Vào thư mục build
 Set-Location build/web
 
+# Thêm bước ép version cho service worker
+(Get-Content flutter_service_worker.js) -replace "const CACHE_NAME = 'flutter-app-cache';", "const CACHE_NAME = 'flutter-app-cache-v$(Get-Date -Format yyyyMMddHHmmss)';" | Set-Content flutter_service_worker.js
+
 # Init repo tạm
 git init
 
