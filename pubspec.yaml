@@ -23,6 +23,18 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.4.11
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "favicon-full.png"
+
+  web:
+    generate: true
+    image_path: "favicon-full.png"
+    background_color: "#0175C2"
+    theme_color: "#0175C2"
