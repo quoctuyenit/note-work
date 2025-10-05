@@ -88564,7 +88564,7 @@ A.axc.prototype={
 $0(){window.location.reload()},
 $S:0}
 A.NO.prototype={
-K(a){return new A.AU(B.NC,"Note work",A.w1(null,null,B.CP,!0),null)}}
+K(a){return new A.AU(B.NC,"Note work v1.1",A.w1(null,null,B.CP,!0),null)}}
 A.awx.prototype={
 $1(a){var s=new A.n4(),r=$.axH()
 s.a=t.gx.a(r.pF("booking_days",!1,t.L3))
