@@ -15,7 +15,7 @@ $Token = Get-Content $TokenPath | Out-String
 $Token = $Token.Trim()
 
 # Build Flutter web (release)
-flutter build web --base-href "/note-work/"
+flutter build web --release --base-href "/note-work/" --tree-shake-icons --dart2js-optimization O4 --pwa-strategy offline-first
 
 # Vào thư mục build
 Set-Location build/web
