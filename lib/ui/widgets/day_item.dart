@@ -88,19 +88,21 @@ class _DayItemState extends ConsumerState<DayItem> {
       widget.onChanged?.call();
     } catch (e) {
       final msg = (e is String) ? e : e.toString();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
   Future<void> _addSlot() async {
-    if (widget.isCompleteTab) return;
     final repo = ref.read(bookingRepoProvider);
-    final ok = await showDialog<bool>(context: context, builder: (_) => AddOrEditSlotDialog(repo: repo, dayId: widget.day.id));
+    final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => AddOrEditSlotDialog(repo: repo, dayId: widget.day.id));
     if (ok == true) widget.onChanged?.call();
   }
 
   Future<void> _editSlot(BookingSlot s) async {
-    if (widget.isCompleteTab) return;
     final repo = ref.read(bookingRepoProvider);
     final ok = await showDialog<bool>(
       context: context,
@@ -125,8 +127,12 @@ class _DayItemState extends ConsumerState<DayItem> {
         title: const Text('Xác nhận'),
         content: const Text('Bạn muốn xoá khung giờ này?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Xoá')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Huỷ')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Xoá')),
         ],
       ),
     );
@@ -136,7 +142,9 @@ class _DayItemState extends ConsumerState<DayItem> {
         widget.onChanged?.call();
       } catch (e) {
         final msg = (e is String) ? e : e.toString();
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        if (mounted)
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -149,7 +157,9 @@ class _DayItemState extends ConsumerState<DayItem> {
       widget.onChanged?.call();
     } catch (e) {
       final msg = (e is String) ? e : e.toString();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -168,12 +178,30 @@ class _DayItemState extends ConsumerState<DayItem> {
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: Column(children: [
           Row(children: [
-            Expanded(child: Text(_dateTitle(day.date), style: TextStyle(fontWeight: dayOnly == todayOnly ? FontWeight.bold : FontWeight.w600, fontSize: 16, color: dayOnly == todayOnly ? Colors.pink : null))),
-            IconButton(tooltip: collapsed ? 'Mở rộng' : 'Thu gọn', icon: Icon(collapsed ? Icons.unfold_more : Icons.unfold_less), onPressed: _toggleCollapse),
-            if (!widget.isCompleteTab) IconButton(icon: const Icon(Icons.edit_calendar), onPressed: _editDate),
+            Expanded(
+                child: Text(_dateTitle(day.date),
+                    style: TextStyle(
+                        fontWeight: dayOnly == todayOnly
+                            ? FontWeight.bold
+                            : FontWeight.w600,
+                        fontSize: 16,
+                        color: dayOnly == todayOnly ? Colors.pink : null))),
+            IconButton(
+                tooltip: collapsed ? 'Mở rộng' : 'Thu gọn',
+                icon: Icon(collapsed ? Icons.unfold_more : Icons.unfold_less),
+                onPressed: _toggleCollapse),
             if (!widget.isCompleteTab)
-              IconButton(icon: const Icon(Icons.add), tooltip: 'Thêm khung giờ', onPressed: _addSlot),
-            if (!widget.isCompleteTab) IconButton(icon: const Icon(Icons.check_circle_outline), tooltip: 'Hoàn tất ngày', onPressed: _toggleComplete),
+              IconButton(
+                  icon: const Icon(Icons.edit_calendar), onPressed: _editDate),
+            IconButton(
+                icon: const Icon(Icons.add),
+                tooltip: 'Thêm khung giờ',
+                onPressed: _addSlot),
+            if (!widget.isCompleteTab)
+              IconButton(
+                  icon: const Icon(Icons.check_circle_outline),
+                  tooltip: 'Hoàn tất ngày',
+                  onPressed: _toggleComplete),
             if (widget.isCompleteTab && canRevert)
               IconButton(
                 icon: const Icon(Icons.undo),
@@ -185,27 +213,48 @@ class _DayItemState extends ConsumerState<DayItem> {
                     widget.onChanged?.call();
                   } catch (e) {
                     final msg = (e is String) ? e : e.toString();
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                    if (mounted)
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(msg)));
                   }
                 },
               ),
           ]),
           if (!collapsed) ...[
             const Divider(),
-            if (slots.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Text('Chưa có khung giờ')) else
+            if (slots.isEmpty)
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('Chưa có khung giờ'))
+            else
               ...slots.map((s) {
                 return ListTile(
                   leading: const Icon(Icons.access_time),
                   title: Text(s.time),
-                  subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(s.customerName?.trim().isNotEmpty == true ? s.customerName! : 'Trống'),
-                    if (s.note != null && s.note!.trim().isNotEmpty) Text('Ghi chú: ${s.note}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
-                  ]),
+                  subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(s.customerName?.trim().isNotEmpty == true
+                            ? s.customerName!
+                            : 'Trống'),
+                        if (s.note != null && s.note!.trim().isNotEmpty)
+                          Text('Ghi chú: ${s.note}',
+                              style: const TextStyle(
+                                  fontSize: 12, fontStyle: FontStyle.italic)),
+                      ]),
                   trailing: widget.isCompleteTab
-                      ? null
+                      ? Wrap(spacing: 4, children: [
+                          IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _editSlot(s)),
+                        ])
                       : Wrap(spacing: 4, children: [
-                          IconButton(icon: const Icon(Icons.edit), onPressed: () => _editSlot(s)),
-                          IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteSlot(s)),
+                          IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _editSlot(s)),
+                          IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteSlot(s)),
                         ]),
                 );
               }).toList(),
