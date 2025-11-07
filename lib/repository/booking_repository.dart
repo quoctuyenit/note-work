@@ -97,23 +97,32 @@ class BookingRepository {
   }
 
   // Slot management
-  Future<List<BookingSlot>> getSlotsForDay(String dayId) => db.getSlotsByDay(dayId);
+  Future<List<BookingSlot>> getSlotsForDay(String dayId) =>
+      db.getSlotsByDay(dayId);
 
-  Future<int> addSlotToDay(String dayId, String time, {String? customerName, String? note}) async {
+  Future<int> addSlotToDay(String dayId, String time,
+      {String? customerName, String? note}) async {
     final normalized = normalizeTimeInput(time);
-    if (await db.slotExistsInDay(dayId: dayId, time: normalized)) throw 'Lỗi: Khung giờ này đã tồn tại trong ngày.';
-    return db.insertBookingSlot(dayId: dayId, time: normalized, customerName: customerName, note: note);
+    if (await db.slotExistsInDay(dayId: dayId, time: normalized))
+      throw 'Lỗi: Khung giờ này đã tồn tại trong ngày.';
+    return db.insertBookingSlot(
+        dayId: dayId, time: normalized, customerName: customerName, note: note);
   }
 
-  Future<void> updateSlot(int slotId, {String? newTime, String? newName, String? newNote}) async {
+  Future<void> updateSlot(int slotId,
+      {String? newTime, String? newName, String? newNote}) async {
     final slot = await db.getSlotById(slotId);
     if (slot == null) throw 'Không tìm thấy khung giờ.';
     if (newTime != null) {
       final norm = normalizeTimeInput(newTime);
-      if (await db.slotExistsInDayExcludingId(dayId: slot.dayId, time: norm, excludeId: slotId)) {
+      if (await db.slotExistsInDayExcludingId(
+          dayId: slot.dayId, time: norm, excludeId: slotId)) {
         throw 'Lỗi: Khung giờ bị trùng.';
       }
-      await db.updateBookingSlot(slotId, time: norm, customerName: newName ?? slot.customerName, note: newNote ?? slot.note);
+      await db.updateBookingSlot(slotId,
+          time: norm,
+          customerName: newName ?? slot.customerName,
+          note: newNote ?? slot.note);
     } else {
       await db.updateBookingSlot(slotId, customerName: newName, note: newNote);
     }
@@ -129,7 +138,9 @@ class BookingRepository {
   Future<List<BookingDay>> getInProcessingDays() async {
     final today = _dateOnly(DateTime.now());
     final all = await db.getAllBookingDays();
-    return all.where((d) => !d.isCompleted && !_isBefore(d.date, today)).toList();
+    return all
+        .where((d) => !d.isCompleted && !_isBefore(d.date, today))
+        .toList();
   }
 
   Future<List<BookingDay>> getCompletedDays() async {
@@ -149,7 +160,8 @@ class BookingRepository {
     return out;
   }
 
-  Future<Map<int, Map<int, List<BookingDay>>>> getCompletedGroupedByYearMonth() async {
+  Future<Map<int, Map<int, List<BookingDay>>>>
+      getCompletedGroupedByYearMonth() async {
     final days = await getCompletedDays();
     final Map<int, Map<int, List<BookingDay>>> out = {};
     for (final d in days) {
@@ -177,4 +189,20 @@ class BookingRepository {
     }
     return results;
   }
+
+  //export
+  Future<List<BookingDay>> exportBookingDay() => db.exportBookingDays();
+  Future<List<BookingSlot>> exportBookingSlot() => db.exportBookingSlots();
+  Future<List<DefaultSlot>> exportDefaultSlot() => db.exportDefaultSlots();
+
+  //clear
+  Future<void> clearAll() => db.clearAll();
+  int getCounter(key) => db.getCounter(key);
+
+  //add
+  Future<void> restoreDay(day) => db.addDay(day);
+  Future<void> restoreSlot(slot) => db.addSlot(slot);
+  Future<void> restoreDefaultSlot(DefaultSlot slot) => db.addDefaultSlot(slot);
+  Future<void> restoreCounter(String key, int value) =>
+      db.setCounter(key, value);
 }

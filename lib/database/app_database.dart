@@ -29,6 +29,24 @@ class BookingDay extends HiveObject {
     this.isCompleted = false,
     this.isCollapsed = false,
   });
+
+  factory BookingDay.fromJson(Map<String, dynamic> json) {
+    return BookingDay(
+      id: json['id'],
+      date: DateTime.parse(json['date']),
+      isCompleted: json['isCompleted'],
+      isCollapsed: json['isCollapsed'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'date': date.toIso8601String(),
+      'isCompleted': isCompleted,
+      'isCollapsed': isCollapsed,
+    };
+  }
 }
 
 class BookingDayAdapter extends TypeAdapter<BookingDay> {
@@ -89,6 +107,26 @@ class BookingSlot extends HiveObject {
     this.customerName,
     this.note,
   });
+
+  factory BookingSlot.fromJson(Map<String, dynamic> json) {
+    return BookingSlot(
+      id: json['id'],
+      dayId: json['dayId'],
+      time: json['time'],
+      customerName: json['customerName'],
+      note: json['note'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'dayId': dayId,
+      'time': time,
+      'customerName': customerName,
+      'note': note,
+    };
+  }
 }
 
 class BookingSlotAdapter extends TypeAdapter<BookingSlot> {
@@ -137,6 +175,20 @@ class DefaultSlot extends HiveObject {
   String time;
 
   DefaultSlot({required this.id, required this.time});
+
+  factory DefaultSlot.fromJson(Map<String, dynamic> json) {
+    return DefaultSlot(
+      id: json['id'],
+      time: json['time'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'time': time,
+    };
+  }
 }
 
 class DefaultSlotAdapter extends TypeAdapter<DefaultSlot> {
@@ -179,13 +231,16 @@ class AppDatabase {
 
     // Register adapters if not registered
     if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(BookingDayAdapter());
-    if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BookingSlotAdapter());
-    if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(DefaultSlotAdapter());
+    if (!Hive.isAdapterRegistered(1))
+      Hive.registerAdapter(BookingSlotAdapter());
+    if (!Hive.isAdapterRegistered(2))
+      Hive.registerAdapter(DefaultSlotAdapter());
 
     // Open boxes if not open
     if (!Hive.isBoxOpen(_daysBox)) await Hive.openBox<BookingDay>(_daysBox);
     if (!Hive.isBoxOpen(_slotsBox)) await Hive.openBox<BookingSlot>(_slotsBox);
-    if (!Hive.isBoxOpen(_defaultsBox)) await Hive.openBox<DefaultSlot>(_defaultsBox);
+    if (!Hive.isBoxOpen(_defaultsBox))
+      await Hive.openBox<DefaultSlot>(_defaultsBox);
     if (!Hive.isBoxOpen(_countersBox)) await Hive.openBox<int>(_countersBox);
   }
 
@@ -210,7 +265,8 @@ class AppDatabase {
   }
 
   // BookingDays
-  Future<void> insertBookingDay({required String id, required DateTime date}) async {
+  Future<void> insertBookingDay(
+      {required String id, required DateTime date}) async {
     final dOnly = DateTime(date.year, date.month, date.day);
     final day = BookingDay(id: id, date: dOnly);
     await _days.put(id, day);
@@ -224,8 +280,11 @@ class AppDatabase {
 
   Future<BookingDay?> getDayByDate(DateTime dateOnly) async {
     try {
-      return _days.values.cast<BookingDay?>().firstWhere(
-          (d) => d != null && d.date.year == dateOnly.year && d.date.month == dateOnly.month && d.date.day == dateOnly.day);
+      return _days.values.cast<BookingDay?>().firstWhere((d) =>
+          d != null &&
+          d.date.year == dateOnly.year &&
+          d.date.month == dateOnly.month &&
+          d.date.day == dateOnly.day);
     } catch (e) {
       return null;
     }
@@ -235,7 +294,8 @@ class AppDatabase {
     return _days.get(id);
   }
 
-  Future<void> updateBookingDay(String id, {DateTime? date, bool? isCompleted, bool? isCollapsed}) async {
+  Future<void> updateBookingDay(String id,
+      {DateTime? date, bool? isCompleted, bool? isCollapsed}) async {
     final d = _days.get(id);
     if (d == null) return;
     d.date = date ?? d.date;
@@ -254,9 +314,18 @@ class AppDatabase {
   }
 
   // BookingSlots
-  Future<int> insertBookingSlot({required String dayId, required String time, String? customerName, String? note}) async {
+  Future<int> insertBookingSlot(
+      {required String dayId,
+      required String time,
+      String? customerName,
+      String? note}) async {
     final newId = _nextId('slot_id');
-    final slot = BookingSlot(id: newId, dayId: dayId, time: time, customerName: customerName, note: note);
+    final slot = BookingSlot(
+        id: newId,
+        dayId: dayId,
+        time: time,
+        customerName: customerName,
+        note: note);
     // Use slot.id as key to simplify lookup by id
     await _slots.put(newId, slot);
     return newId;
@@ -275,7 +344,8 @@ class AppDatabase {
     return list;
   }
 
-  Future<void> updateBookingSlot(int id, {String? customerName, String? note, String? time}) async {
+  Future<void> updateBookingSlot(int id,
+      {String? customerName, String? note, String? time}) async {
     final s = _slots.get(id);
     if (s == null) return;
     s.customerName = customerName ?? s.customerName;
@@ -288,13 +358,18 @@ class AppDatabase {
     await _slots.delete(id);
   }
 
-  Future<bool> slotExistsInDay({required String dayId, required String time}) async {
+  Future<bool> slotExistsInDay(
+      {required String dayId, required String time}) async {
     final found = _slots.values.any((s) => s.dayId == dayId && s.time == time);
     return found;
   }
 
-  Future<bool> slotExistsInDayExcludingId({required String dayId, required String time, required int excludeId}) async {
-    final found = _slots.values.any((s) => s.dayId == dayId && s.time == time && s.id != excludeId);
+  Future<bool> slotExistsInDayExcludingId(
+      {required String dayId,
+      required String time,
+      required int excludeId}) async {
+    final found = _slots.values
+        .any((s) => s.dayId == dayId && s.time == time && s.id != excludeId);
     return found;
   }
 
@@ -314,5 +389,52 @@ class AppDatabase {
 
   Future<void> deleteDefaultSlot(int id) async {
     await _defaults.delete(id);
+  }
+
+  //export data
+  Future<List<BookingDay>> exportBookingDays() async {
+    return _days.values.toList();
+  }
+
+  Future<List<BookingSlot>> exportBookingSlots() async {
+    return _slots.values.toList();
+  }
+
+  Future<List<DefaultSlot>> exportDefaultSlots() async {
+    return _defaults.values.toList();
+  }
+
+  int getCounter(String key) => _counters.get(key, defaultValue: 0) ?? 0;
+
+  //clear all
+  Future<void> clearAll() async {
+    await _days.clear();
+    await _slots.clear();
+    await _defaults.clear();
+    await _counters.clear();
+  }
+
+  //add
+  Future<void> addDay(BookingDay day) async {
+    return createOrUpdate(_days, day);
+  }
+
+  Future<void> addSlot(BookingSlot slot) async {
+    return createOrUpdate(_slots, slot);
+  }
+
+  Future<void> addDefaultSlot(DefaultSlot slot) async {
+    return createOrUpdate(_defaults, slot);
+  }
+
+  Future<void> setCounter(String key, int value) async =>
+      _counters.put(key, value);
+
+  Future<void> createOrUpdate(box, data) async {
+    if (data.id != null) {
+      await box.put(data.id, data);
+    } else {
+      await box.add(data);
+    }
   }
 }
