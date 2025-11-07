@@ -29,7 +29,7 @@
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.png" />
-  <link rel="icon" type="image/x-icon" sizes="512x512" href="icons/Icon-512.png"/>
+  <link rel="icon" type="image/x-icon" sizes="512x512" href="icons/Icon-512.png" />
   <link rel="icon" type="image/x-icon" sizes="192x192" href="icons/Icon-192.png" />
 
   <title>Note work</title>
@@ -38,15 +38,17 @@
 
 <body>
   <script>
-    // Override Flutter loader để ép tải main.dart.js từ CDN
-    const flutterLoader = window._flutter ?? (window._flutter = {});
-    flutterLoader.loader = flutterLoader.loader || {};
-    flutterLoader.loader.load = function (config) {
-      // Ép URL CDN
-      config.mainJsPath = "https://cdn.jsdelivr.net/gh/quoctuyenit/note-work@gh-pages/main.dart.js";
-      console.log("%c✅ main.dart.js will be loaded from CDN!", "color:lime;font-weight:bold");
-      return import(config.mainJsPath);
-    };
+    if (window.location.hostname !== 'localhost') {
+      // Override Flutter loader để ép tải main.dart.js từ CDN
+      const flutterLoader = window._flutter ?? (window._flutter = {});
+      flutterLoader.loader = flutterLoader.loader || {};
+      flutterLoader.loader.load = function (config) {
+        // Ép URL CDN
+        config.mainJsPath = "https://cdn.jsdelivr.net/gh/quoctuyenit/note-work@gh-pages/main.dart.js";
+        console.log("%c✅ main.dart.js will be loaded from CDN!", "color:lime;font-weight:bold");
+        return import(config.mainJsPath);
+      };
+    }
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
