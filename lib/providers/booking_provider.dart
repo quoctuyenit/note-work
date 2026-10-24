@@ -6,6 +6,7 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 final bookingRepoProvider = Provider<BookingRepository>((ref) => BookingRepository(ref.read(appDatabaseProvider)));
 
 final defaultSlotsProvider = FutureProvider<List<DefaultSlot>>((ref) => ref.read(bookingRepoProvider).getDefaultSlots());
+final employeesProvider = FutureProvider<List<Employee>>((ref) => ref.read(bookingRepoProvider).getEmployees());
 final inProcessingDaysProvider = FutureProvider<List<BookingDay>>((ref) => ref.read(bookingRepoProvider).getInProcessingDays());
 final completedDaysProvider = FutureProvider<List<BookingDay>>((ref) => ref.read(bookingRepoProvider).getCompletedDays());
 

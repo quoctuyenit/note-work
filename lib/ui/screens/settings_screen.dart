@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:note_work/providers/booking_provider.dart';
 import 'package:note_work/ui/tabs/backup_data_tab.dart';
+import 'package:note_work/ui/tabs/employees_tab.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -18,7 +19,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -40,6 +41,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           controller: _tabController,
           tabs: const [
             Tab(text: 'Khung giờ'),
+            Tab(text: 'Nhân viên'),
             Tab(text: 'Data Control'),
           ],
         ),
@@ -111,7 +113,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ]),
           ),
 
-          // Tab 2: Backup / Restore
+          // Tab 2: Nhân viên
+          const EmployeesTab(),
+
+          // Tab 3: Backup / Restore
           const BackupDataTab(),
         ],
       ),

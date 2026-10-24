@@ -219,10 +219,64 @@ class DefaultSlotAdapter extends TypeAdapter<DefaultSlot> {
   }
 }
 
+@HiveType(typeId: 3)
+class Employee extends HiveObject {
+  @HiveField(0)
+  int id;
+
+  @HiveField(1)
+  String name;
+
+  Employee({required this.id, required this.name});
+
+  factory Employee.fromJson(Map<String, dynamic> json) {
+    return Employee(
+      id: json['id'],
+      name: json['name'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
+  }
+}
+
+class EmployeeAdapter extends TypeAdapter<Employee> {
+  @override
+  final int typeId = 3;
+
+  @override
+  Employee read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{};
+    for (var i = 0; i < numOfFields; i++) {
+      fields[reader.readByte()] = reader.read();
+    }
+    return Employee(
+      id: fields[0] as int,
+      name: fields[1] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Employee obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name);
+  }
+}
+
 class AppDatabase {
   static const String _daysBox = 'booking_days';
   static const String _slotsBox = 'booking_slots';
   static const String _defaultsBox = 'default_slots';
+  static const String _employeesBox = 'employees';
   static const String _countersBox = 'counters_box';
 
   static Future<void> init() async {
@@ -235,12 +289,16 @@ class AppDatabase {
       Hive.registerAdapter(BookingSlotAdapter());
     if (!Hive.isAdapterRegistered(2))
       Hive.registerAdapter(DefaultSlotAdapter());
+    if (!Hive.isAdapterRegistered(3))
+      Hive.registerAdapter(EmployeeAdapter());
 
     // Open boxes if not open
     if (!Hive.isBoxOpen(_daysBox)) await Hive.openBox<BookingDay>(_daysBox);
     if (!Hive.isBoxOpen(_slotsBox)) await Hive.openBox<BookingSlot>(_slotsBox);
     if (!Hive.isBoxOpen(_defaultsBox))
       await Hive.openBox<DefaultSlot>(_defaultsBox);
+    if (!Hive.isBoxOpen(_employeesBox))
+      await Hive.openBox<Employee>(_employeesBox);
     if (!Hive.isBoxOpen(_countersBox)) await Hive.openBox<int>(_countersBox);
   }
 
@@ -249,12 +307,14 @@ class AppDatabase {
     _days = Hive.box<BookingDay>(_daysBox);
     _slots = Hive.box<BookingSlot>(_slotsBox);
     _defaults = Hive.box<DefaultSlot>(_defaultsBox);
+    _employees = Hive.box<Employee>(_employeesBox);
     _counters = Hive.box<int>(_countersBox);
   }
 
   late final Box<BookingDay> _days;
   late final Box<BookingSlot> _slots;
   late final Box<DefaultSlot> _defaults;
+  late final Box<Employee> _employees;
   late final Box<int> _counters;
 
   int _nextId(String key) {
@@ -391,6 +451,31 @@ class AppDatabase {
     await _defaults.delete(id);
   }
 
+  // Employees
+  Future<int> insertEmployee({required String name}) async {
+    final newId = _nextId('employee_id');
+    final emp = Employee(id: newId, name: name);
+    await _employees.put(newId, emp);
+    return newId;
+  }
+
+  Future<List<Employee>> getAllEmployees() async {
+    final list = _employees.values.toList();
+    list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return list;
+  }
+
+  Future<void> deleteEmployee(int id) async {
+    await _employees.delete(id);
+  }
+
+  Future<void> updateEmployee(int id, {required String name}) async {
+    final emp = _employees.get(id);
+    if (emp == null) return;
+    emp.name = name;
+    await emp.save();
+  }
+
   //export data
   Future<List<BookingDay>> exportBookingDays() async {
     return _days.values.toList();
@@ -404,6 +489,10 @@ class AppDatabase {
     return _defaults.values.toList();
   }
 
+  Future<List<Employee>> exportEmployees() async {
+    return _employees.values.toList();
+  }
+
   int getCounter(String key) => _counters.get(key, defaultValue: 0) ?? 0;
 
   //clear all
@@ -411,6 +500,7 @@ class AppDatabase {
     await _days.clear();
     await _slots.clear();
     await _defaults.clear();
+    await _employees.clear();
     await _counters.clear();
   }
 
@@ -425,6 +515,10 @@ class AppDatabase {
 
   Future<void> addDefaultSlot(DefaultSlot slot) async {
     return createOrUpdate(_defaults, slot);
+  }
+
+  Future<void> addEmployee(Employee emp) async {
+    return createOrUpdate(_employees, emp);
   }
 
   Future<void> setCounter(String key, int value) async =>

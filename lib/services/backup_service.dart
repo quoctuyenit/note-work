@@ -19,14 +19,17 @@ class BackupService {
     final days = await repo.exportBookingDay();
     final slots = await repo.exportBookingSlot();
     final defaults = await repo.exportDefaultSlot();
+    final employees = await repo.exportEmployees();
     final counters = {
       'default_slot_id': await repo.getCounter('default_slot_id'),
       'slot_id': await repo.getCounter('slot_id'),
+      'employee_id': await repo.getCounter('employee_id'),
     };
     final backupData = {
       'booking_days': days.map((d) => d.toJson()).toList(),
       'booking_slots': slots.map((d) => d.toJson()).toList(),
       'default_slots': defaults.map((d) => d.toJson()).toList(),
+      'employees': employees.map((e) => e.toJson()).toList(),
       'counters': counters,
     };
     return jsonEncode(backupData);
@@ -48,6 +51,12 @@ class BackupService {
     // Restore default_slots
     for (var raw in data['default_slots']) {
       await repo.restoreDefaultSlot(DefaultSlot.fromJson(raw));
+    }
+    // Restore employees
+    if (data['employees'] != null) {
+      for (var raw in data['employees']) {
+        await repo.restoreEmployee(Employee.fromJson(raw));
+      }
     }
 
     // Restore counters (if any)

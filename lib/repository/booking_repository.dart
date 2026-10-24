@@ -190,10 +190,40 @@ class BookingRepository {
     return results;
   }
 
+  // Employees
+  Future<List<Employee>> getEmployees() => db.getAllEmployees();
+
+  Future<void> addEmployee(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw 'Lỗi: Tên nhân viên không được để trống.';
+    }
+    final all = await db.getAllEmployees();
+    if (all.any((e) => e.name.toLowerCase() == trimmed.toLowerCase())) {
+      throw 'Lỗi: Nhân viên "$trimmed" đã tồn tại.';
+    }
+    await db.insertEmployee(name: trimmed);
+  }
+
+  Future<void> updateEmployee(int id, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw 'Lỗi: Tên nhân viên không được để trống.';
+    }
+    final all = await db.getAllEmployees();
+    if (all.any((e) => e.id != id && e.name.toLowerCase() == trimmed.toLowerCase())) {
+      throw 'Lỗi: Tên nhân viên "$trimmed" đã tồn tại.';
+    }
+    await db.updateEmployee(id, name: trimmed);
+  }
+
+  Future<void> deleteEmployee(int id) => db.deleteEmployee(id);
+
   //export
   Future<List<BookingDay>> exportBookingDay() => db.exportBookingDays();
   Future<List<BookingSlot>> exportBookingSlot() => db.exportBookingSlots();
   Future<List<DefaultSlot>> exportDefaultSlot() => db.exportDefaultSlots();
+  Future<List<Employee>> exportEmployees() => db.exportEmployees();
 
   //clear
   Future<void> clearAll() => db.clearAll();
@@ -203,6 +233,7 @@ class BookingRepository {
   Future<void> restoreDay(day) => db.addDay(day);
   Future<void> restoreSlot(slot) => db.addSlot(slot);
   Future<void> restoreDefaultSlot(DefaultSlot slot) => db.addDefaultSlot(slot);
+  Future<void> restoreEmployee(Employee emp) => db.addEmployee(emp);
   Future<void> restoreCounter(String key, int value) =>
       db.setCounter(key, value);
 }

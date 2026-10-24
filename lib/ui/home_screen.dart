@@ -43,7 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             },
           ),
           IconButton(
-            tooltip: 'Cài đặt khung giờ',
+            tooltip: 'Cài đặt',
             icon: const Icon(Icons.settings),
             onPressed: () {
               Navigator.of(context)
