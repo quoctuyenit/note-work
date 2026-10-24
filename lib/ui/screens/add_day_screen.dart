@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nail_schedule_app/repository/booking_repository.dart';
+import 'package:note_work/repository/booking_repository.dart';
 
 class AddDayScreen extends StatefulWidget {
   final BookingRepository bookingRepo;

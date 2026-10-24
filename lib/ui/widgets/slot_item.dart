@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
+import 'package:note_work/database/app_database.dart';
 
 class SlotItem extends StatefulWidget {
   final BookingSlot slot;

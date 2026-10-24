@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:nail_schedule_app/repository/booking_repository.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
+import 'package:note_work/repository/booking_repository.dart';
+import 'package:note_work/database/app_database.dart';
 
 class SearchCustomerDelegate extends SearchDelegate<void> {
   final BookingRepository repo;

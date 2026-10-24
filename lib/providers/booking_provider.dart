@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nail_schedule_app/database/app_database.dart';
-import 'package:nail_schedule_app/repository/booking_repository.dart';
+import 'package:note_work/database/app_database.dart';
+import 'package:note_work/repository/booking_repository.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 final bookingRepoProvider = Provider<BookingRepository>((ref) => BookingRepository(ref.read(appDatabaseProvider)));
