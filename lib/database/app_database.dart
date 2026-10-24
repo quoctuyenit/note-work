@@ -272,11 +272,170 @@ class EmployeeAdapter extends TypeAdapter<Employee> {
   }
 }
 
+@HiveType(typeId: 4)
+class SalesDay extends HiveObject {
+  @HiveField(0)
+  String id;
+
+  @HiveField(1)
+  DateTime date;
+
+  @HiveField(2)
+  bool isCollapsed;
+
+  SalesDay({
+    required this.id,
+    required this.date,
+    this.isCollapsed = false,
+  });
+
+  factory SalesDay.fromJson(Map<String, dynamic> json) {
+    return SalesDay(
+      id: json['id'],
+      date: DateTime.parse(json['date']),
+      isCollapsed: json['isCollapsed'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'date': date.toIso8601String(),
+      'isCollapsed': isCollapsed,
+    };
+  }
+}
+
+class SalesDayAdapter extends TypeAdapter<SalesDay> {
+  @override
+  final int typeId = 4;
+
+  @override
+  SalesDay read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{};
+    for (var i = 0; i < numOfFields; i++) {
+      fields[reader.readByte()] = reader.read();
+    }
+    return SalesDay(
+      id: fields[0] as String,
+      date: fields[1] as DateTime,
+      isCollapsed: fields[2] as bool,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, SalesDay obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.date)
+      ..writeByte(2)
+      ..write(obj.isCollapsed);
+  }
+}
+
+@HiveType(typeId: 5)
+class EmployeeSale extends HiveObject {
+  @HiveField(0)
+  int id;
+
+  @HiveField(1)
+  String dayId;
+
+  @HiveField(2)
+  int employeeId;
+
+  @HiveField(3)
+  String employeeName;
+
+  @HiveField(4)
+  double amount;
+
+  @HiveField(5)
+  String? note;
+
+  EmployeeSale({
+    required this.id,
+    required this.dayId,
+    required this.employeeId,
+    required this.employeeName,
+    required this.amount,
+    this.note,
+  });
+
+  factory EmployeeSale.fromJson(Map<String, dynamic> json) {
+    return EmployeeSale(
+      id: json['id'],
+      dayId: json['dayId'],
+      employeeId: json['employeeId'] ?? 0,
+      employeeName: json['employeeName'] ?? '',
+      amount: (json['amount'] as num).toDouble(),
+      note: json['note'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'dayId': dayId,
+      'employeeId': employeeId,
+      'employeeName': employeeName,
+      'amount': amount,
+      'note': note,
+    };
+  }
+}
+
+class EmployeeSaleAdapter extends TypeAdapter<EmployeeSale> {
+  @override
+  final int typeId = 5;
+
+  @override
+  EmployeeSale read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{};
+    for (var i = 0; i < numOfFields; i++) {
+      fields[reader.readByte()] = reader.read();
+    }
+    return EmployeeSale(
+      id: fields[0] as int,
+      dayId: fields[1] as String,
+      employeeId: fields[2] as int,
+      employeeName: fields[3] as String,
+      amount: (fields[4] as num).toDouble(),
+      note: fields[5] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, EmployeeSale obj) {
+    writer
+      ..writeByte(6)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.dayId)
+      ..writeByte(2)
+      ..write(obj.employeeId)
+      ..writeByte(3)
+      ..write(obj.employeeName)
+      ..writeByte(4)
+      ..write(obj.amount)
+      ..writeByte(5)
+      ..write(obj.note);
+  }
+}
+
 class AppDatabase {
   static const String _daysBox = 'booking_days';
   static const String _slotsBox = 'booking_slots';
   static const String _defaultsBox = 'default_slots';
   static const String _employeesBox = 'employees';
+  static const String _salesDaysBox = 'sales_days';
+  static const String _salesRecordsBox = 'sales_records';
   static const String _countersBox = 'counters_box';
 
   static Future<void> init() async {
@@ -291,6 +450,10 @@ class AppDatabase {
       Hive.registerAdapter(DefaultSlotAdapter());
     if (!Hive.isAdapterRegistered(3))
       Hive.registerAdapter(EmployeeAdapter());
+    if (!Hive.isAdapterRegistered(4))
+      Hive.registerAdapter(SalesDayAdapter());
+    if (!Hive.isAdapterRegistered(5))
+      Hive.registerAdapter(EmployeeSaleAdapter());
 
     // Open boxes if not open
     if (!Hive.isBoxOpen(_daysBox)) await Hive.openBox<BookingDay>(_daysBox);
@@ -299,6 +462,10 @@ class AppDatabase {
       await Hive.openBox<DefaultSlot>(_defaultsBox);
     if (!Hive.isBoxOpen(_employeesBox))
       await Hive.openBox<Employee>(_employeesBox);
+    if (!Hive.isBoxOpen(_salesDaysBox))
+      await Hive.openBox<SalesDay>(_salesDaysBox);
+    if (!Hive.isBoxOpen(_salesRecordsBox))
+      await Hive.openBox<EmployeeSale>(_salesRecordsBox);
     if (!Hive.isBoxOpen(_countersBox)) await Hive.openBox<int>(_countersBox);
   }
 
@@ -308,6 +475,8 @@ class AppDatabase {
     _slots = Hive.box<BookingSlot>(_slotsBox);
     _defaults = Hive.box<DefaultSlot>(_defaultsBox);
     _employees = Hive.box<Employee>(_employeesBox);
+    _salesDays = Hive.box<SalesDay>(_salesDaysBox);
+    _salesRecords = Hive.box<EmployeeSale>(_salesRecordsBox);
     _counters = Hive.box<int>(_countersBox);
   }
 
@@ -315,6 +484,8 @@ class AppDatabase {
   late final Box<BookingSlot> _slots;
   late final Box<DefaultSlot> _defaults;
   late final Box<Employee> _employees;
+  late final Box<SalesDay> _salesDays;
+  late final Box<EmployeeSale> _salesRecords;
   late final Box<int> _counters;
 
   int _nextId(String key) {
@@ -476,6 +647,98 @@ class AppDatabase {
     await emp.save();
   }
 
+  // SalesDays
+  Future<void> insertSalesDay({required String id, required DateTime date}) async {
+    final dOnly = DateTime(date.year, date.month, date.day);
+    final day = SalesDay(id: id, date: dOnly);
+    await _salesDays.put(id, day);
+  }
+
+  Future<List<SalesDay>> getAllSalesDays() async {
+    final list = _salesDays.values.toList();
+    list.sort((a, b) => b.date.compareTo(a.date)); // mới nhất lên trước
+    return list;
+  }
+
+  Future<SalesDay?> getSalesDayByDate(DateTime dateOnly) async {
+    try {
+      return _salesDays.values.cast<SalesDay?>().firstWhere((d) =>
+          d != null &&
+          d.date.year == dateOnly.year &&
+          d.date.month == dateOnly.month &&
+          d.date.day == dateOnly.day);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<SalesDay?> getSalesDayById(String id) async {
+    return _salesDays.get(id);
+  }
+
+  Future<void> updateSalesDay(String id, {DateTime? date, bool? isCollapsed}) async {
+    final d = _salesDays.get(id);
+    if (d == null) return;
+    d.date = date ?? d.date;
+    d.isCollapsed = isCollapsed ?? d.isCollapsed;
+    await d.save();
+  }
+
+  Future<void> deleteSalesDay(String id) async {
+    final toDelete = _salesRecords.values.where((s) => s.dayId == id).toList();
+    for (final s in toDelete) {
+      await _salesRecords.delete(s.id);
+    }
+    await _salesDays.delete(id);
+  }
+
+  // EmployeeSale
+  Future<int> insertEmployeeSale({
+    required String dayId,
+    required int employeeId,
+    required String employeeName,
+    required double amount,
+    String? note,
+  }) async {
+    final newId = _nextId('sale_id');
+    final sale = EmployeeSale(
+      id: newId,
+      dayId: dayId,
+      employeeId: employeeId,
+      employeeName: employeeName,
+      amount: amount,
+      note: note,
+    );
+    await _salesRecords.put(newId, sale);
+    return newId;
+  }
+
+  Future<List<EmployeeSale>> getSalesByDay(String dayId) async {
+    final list = _salesRecords.values.where((s) => s.dayId == dayId).toList();
+    list.sort((a, b) => a.employeeName.toLowerCase().compareTo(b.employeeName.toLowerCase()));
+    return list;
+  }
+
+  Future<void> updateEmployeeSale(
+    int id, {
+    required int employeeId,
+    required String employeeName,
+    required double amount,
+    String? note,
+  }) async {
+    final s = _salesRecords.get(id);
+    if (s == null) return;
+    s.employeeId = employeeId;
+    s.employeeName = employeeName;
+    s.amount = amount;
+    s.note = note;
+    await s.save();
+  }
+
+  Future<void> deleteEmployeeSale(int id) async {
+    await _salesRecords.delete(id);
+  }
+
   //export data
   Future<List<BookingDay>> exportBookingDays() async {
     return _days.values.toList();
@@ -493,6 +756,14 @@ class AppDatabase {
     return _employees.values.toList();
   }
 
+  Future<List<SalesDay>> exportSalesDays() async {
+    return _salesDays.values.toList();
+  }
+
+  Future<List<EmployeeSale>> exportEmployeeSales() async {
+    return _salesRecords.values.toList();
+  }
+
   int getCounter(String key) => _counters.get(key, defaultValue: 0) ?? 0;
 
   //clear all
@@ -501,6 +772,8 @@ class AppDatabase {
     await _slots.clear();
     await _defaults.clear();
     await _employees.clear();
+    await _salesDays.clear();
+    await _salesRecords.clear();
     await _counters.clear();
   }
 
@@ -519,6 +792,14 @@ class AppDatabase {
 
   Future<void> addEmployee(Employee emp) async {
     return createOrUpdate(_employees, emp);
+  }
+
+  Future<void> addSalesDay(SalesDay day) async {
+    return createOrUpdate(_salesDays, day);
+  }
+
+  Future<void> addEmployeeSale(EmployeeSale sale) async {
+    return createOrUpdate(_salesRecords, sale);
   }
 
   Future<void> setCounter(String key, int value) async =>

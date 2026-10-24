@@ -20,16 +20,21 @@ class BackupService {
     final slots = await repo.exportBookingSlot();
     final defaults = await repo.exportDefaultSlot();
     final employees = await repo.exportEmployees();
+    final salesDays = await repo.exportSalesDay();
+    final salesRecords = await repo.exportEmployeeSale();
     final counters = {
       'default_slot_id': await repo.getCounter('default_slot_id'),
       'slot_id': await repo.getCounter('slot_id'),
       'employee_id': await repo.getCounter('employee_id'),
+      'sale_id': await repo.getCounter('sale_id'),
     };
     final backupData = {
       'booking_days': days.map((d) => d.toJson()).toList(),
       'booking_slots': slots.map((d) => d.toJson()).toList(),
       'default_slots': defaults.map((d) => d.toJson()).toList(),
       'employees': employees.map((e) => e.toJson()).toList(),
+      'sales_days': salesDays.map((d) => d.toJson()).toList(),
+      'sales_records': salesRecords.map((r) => r.toJson()).toList(),
       'counters': counters,
     };
     return jsonEncode(backupData);
@@ -56,6 +61,18 @@ class BackupService {
     if (data['employees'] != null) {
       for (var raw in data['employees']) {
         await repo.restoreEmployee(Employee.fromJson(raw));
+      }
+    }
+    // Restore sales_days
+    if (data['sales_days'] != null) {
+      for (var raw in data['sales_days']) {
+        await repo.restoreSalesDay(SalesDay.fromJson(raw));
+      }
+    }
+    // Restore sales_records
+    if (data['sales_records'] != null) {
+      for (var raw in data['sales_records']) {
+        await repo.restoreEmployeeSale(EmployeeSale.fromJson(raw));
       }
     }
 

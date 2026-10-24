@@ -219,11 +219,100 @@ class BookingRepository {
 
   Future<void> deleteEmployee(int id) => db.deleteEmployee(id);
 
+  // SalesDays
+  Future<List<SalesDay>> getAllSalesDays() => db.getAllSalesDays();
+
+  Future<Set<DateTime>> getSalesDateSet({String? excludeDayId}) async {
+    final all = await db.getAllSalesDays();
+    final set = <DateTime>{};
+    for (final d in all) {
+      if (excludeDayId == null || d.id != excludeDayId) set.add(d.date);
+    }
+    return set;
+  }
+
+  Future<String> addSalesDay(DateTime date) async {
+    final dOnly = _dateOnly(date);
+    if (await db.getSalesDayByDate(dOnly) != null) {
+      throw 'Lỗi: Ngày này đã tồn tại.';
+    }
+    final dayId = uuid.v4();
+    await db.insertSalesDay(id: dayId, date: dOnly);
+    return dayId;
+  }
+
+  Future<void> updateSalesDayDate(String dayId, DateTime newDate) async {
+    final dOnly = _dateOnly(newDate);
+    final exists = await db.getSalesDayByDate(dOnly);
+    if (exists != null && exists.id != dayId) {
+      throw 'Lỗi: Ngày này đã tồn tại trong danh sách.';
+    }
+    await db.updateSalesDay(dayId, date: dOnly);
+  }
+
+  Future<void> toggleSalesDayCollapse(String dayId) async {
+    final day = await db.getSalesDayById(dayId);
+    if (day == null) return;
+    await db.updateSalesDay(dayId, isCollapsed: !day.isCollapsed);
+  }
+
+  Future<void> deleteSalesDay(String dayId) async {
+    await db.deleteSalesDay(dayId);
+  }
+
+  // EmployeeSale
+  Future<List<EmployeeSale>> getSalesForDay(String dayId) =>
+      db.getSalesByDay(dayId);
+
+  Future<int> addSaleToDay(
+    String dayId, {
+    required int employeeId,
+    required String employeeName,
+    required double amount,
+    String? note,
+  }) async {
+    if (amount <= 0) {
+      throw 'Lỗi: Số tiền phải lớn hơn 0.';
+    }
+    return db.insertEmployeeSale(
+      dayId: dayId,
+      employeeId: employeeId,
+      employeeName: employeeName,
+      amount: amount,
+      note: note,
+    );
+  }
+
+  Future<void> updateSale(
+    int saleId, {
+    required int employeeId,
+    required String employeeName,
+    required double amount,
+    String? note,
+  }) async {
+    if (amount <= 0) {
+      throw 'Lỗi: Số tiền phải lớn hơn 0.';
+    }
+    await db.updateEmployeeSale(
+      saleId,
+      employeeId: employeeId,
+      employeeName: employeeName,
+      amount: amount,
+      note: note,
+    );
+  }
+
+  Future<void> deleteSale(int saleId) async {
+    await db.deleteEmployeeSale(saleId);
+  }
+
   //export
   Future<List<BookingDay>> exportBookingDay() => db.exportBookingDays();
   Future<List<BookingSlot>> exportBookingSlot() => db.exportBookingSlots();
   Future<List<DefaultSlot>> exportDefaultSlot() => db.exportDefaultSlots();
   Future<List<Employee>> exportEmployees() => db.exportEmployees();
+  Future<List<SalesDay>> exportSalesDay() => db.exportSalesDays();
+  Future<List<EmployeeSale>> exportEmployeeSale() => db.exportEmployeeSales();
 
   //clear
   Future<void> clearAll() => db.clearAll();
@@ -234,6 +323,8 @@ class BookingRepository {
   Future<void> restoreSlot(slot) => db.addSlot(slot);
   Future<void> restoreDefaultSlot(DefaultSlot slot) => db.addDefaultSlot(slot);
   Future<void> restoreEmployee(Employee emp) => db.addEmployee(emp);
+  Future<void> restoreSalesDay(SalesDay day) => db.addSalesDay(day);
+  Future<void> restoreEmployeeSale(EmployeeSale sale) => db.addEmployeeSale(sale);
   Future<void> restoreCounter(String key, int value) =>
       db.setCounter(key, value);
 }

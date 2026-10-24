@@ -34,6 +34,7 @@ class InProcessingTab extends ConsumerWidget {
           }
           final months = grouped.keys.toList()..sort((a, b) => b.compareTo(a)); // newest month first
           return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 88),
             itemCount: months.length,
             itemBuilder: (ctx, idx) {
               final month = months[idx];
@@ -67,6 +68,7 @@ class InProcessingTab extends ConsumerWidget {
           }
           final years = grouped.keys.toList()..sort((a, b) => b.compareTo(a)); // latest year first
           return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 88),
             itemCount: years.length,
             itemBuilder: (ctx, yi) {
               final y = years[yi];

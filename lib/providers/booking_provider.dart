@@ -16,3 +16,7 @@ final completedGroupedProvider = FutureProvider<Map<int, Map<int, List<BookingDa
 // Collapsed state: default true -> auto collapsed on load
 final monthCollapsedProvider = StateProvider.family<bool, int>((ref, monthKey) => true);
 final yearCollapsedProvider = StateProvider.family<bool, int>((ref, year) => true);
+
+final salesDaysProvider = FutureProvider<List<SalesDay>>((ref) => ref.read(bookingRepoProvider).getAllSalesDays());
+final salesMonthCollapsedProvider = StateProvider.family<bool, int>((ref, monthKey) => true);
+final salesYearCollapsedProvider = StateProvider.family<bool, int>((ref, year) => true);

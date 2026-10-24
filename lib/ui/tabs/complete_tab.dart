@@ -24,6 +24,7 @@ class CompleteTab extends ConsumerWidget {
         if (map.isEmpty) return const Center(child: Text('Chưa có mục hoàn tất'));
         final years = map.keys.toList()..sort((a, b) => b.compareTo(a));
         return ListView.builder(
+          padding: const EdgeInsets.only(bottom: 88),
           itemCount: years.length,
           itemBuilder: (ctx, yi) {
             final y = years[yi];

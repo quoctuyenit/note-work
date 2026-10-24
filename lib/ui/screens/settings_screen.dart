@@ -42,7 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           tabs: const [
             Tab(text: 'Khung giờ'),
             Tab(text: 'Nhân viên'),
-            Tab(text: 'Data Control'),
+            Tab(text: 'Backup'),
           ],
         ),
       ),
@@ -87,7 +87,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 child: asyncDefaults.when(
                   data: (list) {
                     if (list.isEmpty) {
-                      return const Center(child: Text('Chưa có khung giờ mặc định'));
+                      return const Center(
+                          child: Text('Chưa có khung giờ mặc định'));
                     }
                     return ListView.builder(
                       itemCount: list.length,
@@ -106,7 +107,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       },
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (e, st) => Center(child: Text('Lỗi: $e')),
                 ),
               ),
