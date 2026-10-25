@@ -155,9 +155,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 MaterialPageRoute(builder: (_) => const SettingsScreen()),
               )
                   .then((_) {
-                ref.refresh(inProcessingDaysProvider);
-                ref.refresh(completedDaysProvider);
-                ref.refresh(employeesProvider);
+                ref.invalidate(inProcessingDaysProvider);
+                ref.invalidate(inProcessingGroupedProvider);
+                ref.invalidate(completedDaysProvider);
+                ref.invalidate(completedGroupedProvider);
+                ref.invalidate(employeesProvider);
+                ref.invalidate(defaultSlotsProvider);
+                ref.invalidate(salesDaysProvider);
               });
             },
           ),

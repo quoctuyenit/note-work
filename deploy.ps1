@@ -23,22 +23,30 @@ Set-Location build/web
 # Thêm bước ép version cho service worker
 (Get-Content flutter_service_worker.js) -replace "const CACHE_NAME = 'flutter-app-cache';", "const CACHE_NAME = 'flutter-app-cache-v$(Get-Date -Format yyyyMMddHHmmss)';" | Set-Content flutter_service_worker.js
 
+# Đảm bảo git cho phép thư mục build/web
+$webDir = (Get-Location).Path.Replace('\', '/')
+git config --global --add safe.directory $webDir
+
 # Init repo tạm
 git init
 
 # Dùng HTTPS + token
 $RemoteUrl = "https://${Username}:${Token}@github.com/${Username}/${RepoName}.git"
 
-# Xóa remote cũ nếu có, rồi add remote mới
-git remote remove origin 2>$null
-git remote add origin $RemoteUrl
+# Thêm hoặc cập nhật remote origin
+$existingRemotes = git remote
+if ($existingRemotes -contains "origin") {
+    git remote set-url origin $RemoteUrl
+} else {
+    git remote add origin $RemoteUrl
+}
 
-# Checkout gh-pages
-git checkout -b gh-pages
+# Checkout hoặc reset branch gh-pages
+git checkout -B gh-pages
 
 # Commit và push
 git add .
-git commit -m "Deploy Flutter Web"
+git commit -m "Deploy Flutter Web" --allow-empty
 git push -f origin gh-pages
 
 # Quay lại thư mục gốc

@@ -32,7 +32,18 @@ class BackupDataTab extends ConsumerWidget  {
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () => backupService.restore(context),
+              onPressed: () => backupService.restore(
+                context,
+                onRestored: () {
+                  ref.invalidate(inProcessingDaysProvider);
+                  ref.invalidate(inProcessingGroupedProvider);
+                  ref.invalidate(completedDaysProvider);
+                  ref.invalidate(completedGroupedProvider);
+                  ref.invalidate(employeesProvider);
+                  ref.invalidate(defaultSlotsProvider);
+                  ref.invalidate(salesDaysProvider);
+                },
+              ),
               icon: const Icon(Icons.upload),
               label: const Text('Khôi phục từ file'),
               style: ElevatedButton.styleFrom(

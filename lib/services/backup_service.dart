@@ -42,60 +42,83 @@ class BackupService {
 
   /// Import from JSON and restore data
   Future<void> importFromJson(String jsonContent) async {
-    final data = jsonDecode(jsonContent);
+    final dynamic data = jsonDecode(jsonContent);
+    if (data is! Map) {
+      throw const FormatException('Dữ liệu JSON không đúng định dạng');
+    }
+
     await repo.clearAll();
 
     // Restore booking_days
-    for (var raw in data['booking_days']) {
-      await repo.restoreDay(BookingDay.fromJson(raw));
+    if (data['booking_days'] != null) {
+      for (var raw in data['booking_days']) {
+        await repo.restoreDay(BookingDay.fromJson(Map<String, dynamic>.from(raw)));
+      }
     }
     // Restore booking_slots
-    for (var raw in data['booking_slots']) {
-      await repo.restoreSlot(BookingSlot.fromJson(raw));
+    if (data['booking_slots'] != null) {
+      for (var raw in data['booking_slots']) {
+        await repo.restoreSlot(BookingSlot.fromJson(Map<String, dynamic>.from(raw)));
+      }
     }
     // Restore default_slots
-    for (var raw in data['default_slots']) {
-      await repo.restoreDefaultSlot(DefaultSlot.fromJson(raw));
+    if (data['default_slots'] != null) {
+      for (var raw in data['default_slots']) {
+        await repo.restoreDefaultSlot(DefaultSlot.fromJson(Map<String, dynamic>.from(raw)));
+      }
     }
     // Restore employees
     if (data['employees'] != null) {
       for (var raw in data['employees']) {
-        await repo.restoreEmployee(Employee.fromJson(raw));
+        await repo.restoreEmployee(Employee.fromJson(Map<String, dynamic>.from(raw)));
       }
     }
     // Restore sales_days
     if (data['sales_days'] != null) {
       for (var raw in data['sales_days']) {
-        await repo.restoreSalesDay(SalesDay.fromJson(raw));
+        await repo.restoreSalesDay(SalesDay.fromJson(Map<String, dynamic>.from(raw)));
       }
     }
     // Restore sales_records
     if (data['sales_records'] != null) {
       for (var raw in data['sales_records']) {
-        await repo.restoreEmployeeSale(EmployeeSale.fromJson(raw));
+        await repo.restoreEmployeeSale(EmployeeSale.fromJson(Map<String, dynamic>.from(raw)));
       }
     }
 
     // Restore counters (if any)
     if (data['counters'] != null) {
-      final counters = Map<String, int>.from(data['counters']);
+      final counters = Map<String, dynamic>.from(data['counters']);
       for (var k in counters.keys) {
-        await repo.restoreCounter(k, counters[k]!);
+        final val = counters[k];
+        if (val is int) {
+          await repo.restoreCounter(k, val);
+        }
       }
     }
   }
 
   /// Public method to export and save file
   Future<void> backup(BuildContext context) async {
-    final jsonString = await exportToJson();
-    if (kIsWeb) {
-      _downloadJsonWeb(jsonString);
-    } else {
-      await _saveJsonFileMobile(jsonString);
+    try {
+      final jsonString = await exportToJson();
+      if (kIsWeb) {
+        _downloadJsonWeb(jsonString);
+      } else {
+        await _saveJsonFileMobile(jsonString);
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã tạo file backup thành công!')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi sao lưu dữ liệu: $e')),
+        );
+      }
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã tạo file backup thành công!')),
-    );
   }
 
   /// Backup on Web
@@ -123,17 +146,34 @@ class BackupService {
   }
 
   /// Let user pick a JSON file and import its content
-  Future<void> restore(BuildContext context) async {
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['json']);
-    if (result == null) return; // user canceled
-    final fileBytes = result.files.single.bytes;
-    if (fileBytes != null) {
-      final jsonString = utf8.decode(fileBytes);
-      await importFromJson(jsonString);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phục hồi dữ liệu thành công!')),
+  Future<void> restore(BuildContext context, {VoidCallback? onRestored}) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
       );
+      if (result == null || result.files.isEmpty) return; // user canceled
+
+      final fileBytes = result.files.single.bytes;
+      if (fileBytes != null) {
+        final jsonString = utf8.decode(fileBytes);
+        await importFromJson(jsonString);
+        onRestored?.call();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phục hồi dữ liệu thành công!')),
+          );
+        }
+      } else {
+        throw Exception('Không thể đọc dữ liệu file đã chọn.');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi phục hồi dữ liệu: $e')),
+        );
+      }
     }
   }
 }
