@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:note_work/database/app_database.dart';
+import 'package:note_work/models/sales_summary.dart';
 import 'package:note_work/repository/booking_repository.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
@@ -20,3 +21,27 @@ final yearCollapsedProvider = StateProvider.family<bool, int>((ref, year) => tru
 final salesDaysProvider = FutureProvider<List<SalesDay>>((ref) => ref.read(bookingRepoProvider).getAllSalesDays());
 final salesMonthCollapsedProvider = StateProvider.family<bool, int>((ref, monthKey) => true);
 final salesYearCollapsedProvider = StateProvider.family<bool, int>((ref, year) => true);
+
+class SalesSummaryFilter {
+  final int year;
+  final int? month;
+
+  const SalesSummaryFilter({required this.year, this.month});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SalesSummaryFilter &&
+          runtimeType == other.runtimeType &&
+          year == other.year &&
+          month == other.month;
+
+  @override
+  int get hashCode => year.hashCode ^ month.hashCode;
+}
+
+final salesSummaryProvider =
+    FutureProvider.family<SalesPeriodSummary, SalesSummaryFilter>((ref, filter) {
+  final repo = ref.read(bookingRepoProvider);
+  return repo.getSalesSummary(year: filter.year, month: filter.month);
+});

@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:note_work/database/app_database.dart';
+import 'package:note_work/models/sales_summary.dart';
 
 class BookingRepository {
   final AppDatabase db;
@@ -304,6 +306,71 @@ class BookingRepository {
 
   Future<void> deleteSale(int saleId) async {
     await db.deleteEmployeeSale(saleId);
+  }
+
+  static const List<Color> _chartPalette = [
+    Color(0xFFE91E63), // Pink
+    Color(0xFF3F51B5), // Indigo
+    Color(0xFF009688), // Teal
+    Color(0xFFFF9800), // Orange
+    Color(0xFF9C27B0), // Purple
+    Color(0xFF4CAF50), // Green
+    Color(0xFF2196F3), // Blue
+    Color(0xFFFF5722), // Deep Orange
+    Color(0xFF673AB7), // Deep Purple
+    Color(0xFF00BCD4), // Cyan
+    Color(0xFFFFC107), // Amber
+    Color(0xFF795548), // Brown
+  ];
+
+  Future<SalesPeriodSummary> getSalesSummary({
+    required int year,
+    int? month,
+  }) async {
+    final allSalesDays = await db.getAllSalesDays();
+    final matchingDays = allSalesDays.where((d) {
+      if (d.date.year != year) return false;
+      if (month != null && d.date.month != month) return false;
+      return true;
+    }).toList();
+
+    final Map<int, String> empNames = {};
+    final Map<int, double> empTotals = {};
+
+    for (final day in matchingDays) {
+      final records = await db.getSalesByDay(day.id);
+      for (final r in records) {
+        empNames[r.employeeId] = r.employeeName;
+        empTotals[r.employeeId] = (empTotals[r.employeeId] ?? 0.0) + r.amount;
+      }
+    }
+
+    final grandTotal =
+        empTotals.values.fold<double>(0.0, (sum, val) => sum + val);
+
+    final sortedEntries = empTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final summaries = <EmployeeSalesSummary>[];
+    for (int i = 0; i < sortedEntries.length; i++) {
+      final entry = sortedEntries[i];
+      final pct = grandTotal > 0 ? (entry.value / grandTotal) * 100 : 0.0;
+      final color = _chartPalette[i % _chartPalette.length];
+      summaries.add(EmployeeSalesSummary(
+        employeeId: entry.key,
+        employeeName: empNames[entry.key] ?? 'Nhân viên ${entry.key}',
+        totalAmount: entry.value,
+        percentage: pct,
+        color: color,
+      ));
+    }
+
+    return SalesPeriodSummary(
+      year: year,
+      month: month,
+      grandTotal: grandTotal,
+      employeeSummaries: summaries,
+    );
   }
 
   //export

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:note_work/providers/booking_provider.dart';
+import 'package:note_work/ui/screens/sales_summary_screen.dart';
 import 'package:note_work/ui/screens/settings_screen.dart';
 import 'package:note_work/ui/tabs/complete_tab.dart';
 import 'package:note_work/ui/tabs/in_processing_tab.dart';
@@ -134,6 +135,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 delegate: SearchCustomerDelegate(repo),
               );
               // result không cần dùng; delegate tự hiển thị
+            },
+          ),
+          IconButton(
+            tooltip: 'Thống kê doanh số',
+            icon: const Icon(Icons.analytics_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SalesSummaryScreen()),
+              );
             },
           ),
           IconButton(
