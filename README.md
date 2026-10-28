@@ -16,7 +16,12 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 
-#deploy code
+# Deploy code
 - `run Windows PowerShell as administrator`
 - `run ./deploy.ps1`
-- check https://cdn.jsdelivr.net/gh/quoctuyenit/note-work@gh-pages/main.dart.js
+- *Script sẽ tự động:*
+  1. Build Flutter Web release
+  2. Gắn mã version build chống dính cache cho PWA trên điện thoại (`?v=yyyyMMddHHmmss`)
+  3. Push lên branch `gh-pages`
+  4. Tự động xóa cache trên CDN jsDelivr (`https://purge.jsdelivr.net/...`)
+- Check file code mới nhất trên CDN: https://cdn.jsdelivr.net/gh/quoctuyenit/note-work@gh-pages/main.dart.js

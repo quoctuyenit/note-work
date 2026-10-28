@@ -1,3 +1,10 @@
+﻿# Thiết lập UTF-8 cho console PowerShell để hiển thị đúng tiếng Việt có dấu
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+if ($host.Name -eq 'ConsoleHost') {
+    chcp 65001 > $null
+}
+
 # Stop khi có lỗi
 $ErrorActionPreference = "Stop"
 
@@ -14,26 +21,30 @@ if (-Not (Test-Path $TokenPath)) {
 $Token = Get-Content $TokenPath | Out-String
 $Token = $Token.Trim()
 
-# Build Flutter web (release)
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host " Bắt đầu build & deploy Flutter Web release" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+
+# 1. Build Flutter web (release)
 flutter build web --release --base-href "/note-work/" --tree-shake-icons --dart2js-optimization O4 --pwa-strategy offline-first
 
-# Vào thư mục build
+# 2. Vào thư mục build
 Set-Location build/web
 
-# Thêm bước ép version cho service worker
-(Get-Content flutter_service_worker.js) -replace "const CACHE_NAME = 'flutter-app-cache';", "const CACHE_NAME = 'flutter-app-cache-v$(Get-Date -Format yyyyMMddHHmmss)';" | Set-Content flutter_service_worker.js
+# 3. Tạo mã phiên bản build theo thời gian (Cache-busting cho PWA trên điện thoại)
+$BuildVersion = Get-Date -Format "yyyyMMddHHmmss"
+Write-Host "Cập nhật mã phiên bản build: v$BuildVersion" -ForegroundColor Yellow
 
-# Đảm bảo git cho phép thư mục build/web
+# Gán mã version vào index.html (đảm bảo đọc & ghi đúng chuẩn UTF-8)
+(Get-Content index.html -Encoding UTF8) -replace '\{\{BUILD_VERSION\}\}', $BuildVersion | Set-Content index.html -Encoding UTF8
+
+# 4. Đảm bảo git cho phép thư mục build/web
 $webDir = (Get-Location).Path.Replace('\', '/')
 git config --global --add safe.directory $webDir
 
-# Init repo tạm
+# 5. Init repo tạm và cấu hình remote
 git init
-
-# Dùng HTTPS + token
 $RemoteUrl = "https://${Username}:${Token}@github.com/${Username}/${RepoName}.git"
-
-# Thêm hoặc cập nhật remote origin
 $existingRemotes = git remote
 if ($existingRemotes -contains "origin") {
     git remote set-url origin $RemoteUrl
@@ -41,13 +52,27 @@ if ($existingRemotes -contains "origin") {
     git remote add origin $RemoteUrl
 }
 
-# Checkout hoặc reset branch gh-pages
+# 6. Checkout hoặc reset branch gh-pages
 git checkout -B gh-pages
 
-# Commit và push
+# 7. Commit và push
 git add .
-git commit -m "Deploy Flutter Web" --allow-empty
+git commit -m "Deploy Flutter Web v$BuildVersion" --allow-empty
 git push -f origin gh-pages
 
-# Quay lại thư mục gốc
+# 8. Quay lại thư mục gốc
 Set-Location ../..
+
+# 9. Tự động Purge CDN jsDelivr để cập nhật ngay lập tức trên toàn cầu
+Write-Host "Đang tự động xóa cache CDN jsDelivr..." -ForegroundColor Cyan
+try {
+    $purgeResult = Invoke-RestMethod -Uri "https://purge.jsdelivr.net/gh/${Username}/${RepoName}@gh-pages/main.dart.js" -Method Get
+    Write-Host "Đã xóa cache jsDelivr thành công! (Status: $($purgeResult.status))" -ForegroundColor Green
+} catch {
+    Write-Warning "Không thể xóa cache jsDelivr tự động: $_"
+}
+
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host " Deploy hoàn tất thành công! v$BuildVersion" -ForegroundColor Green
+Write-Host " PWA trên điện thoại sẽ tự động nhận code mới." -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
