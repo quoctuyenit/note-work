@@ -17,6 +17,7 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
   late int _selectedYear;
   int? _selectedMonth;
   int? _selectedEmployeeId;
+  final Set<int> _expandedEmployeeIds = {};
 
   final NumberFormat _currencyFmt = NumberFormat('#,###', 'vi_VN');
 
@@ -33,7 +34,11 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
   }
 
   String _formatPercent(double pct) {
-    return '${pct.toStringAsFixed(1).replaceAll('.', ',')} %';
+    final fixed = pct.toStringAsFixed(1);
+    final cleaned = fixed.endsWith('.0')
+        ? fixed.substring(0, fixed.length - 2)
+        : fixed.replaceAll('.', ',');
+    return '$cleaned %';
   }
 
   void _prevPeriod() {
@@ -49,6 +54,7 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
         _selectedYear--;
       }
       _selectedEmployeeId = null;
+      _expandedEmployeeIds.clear();
     });
   }
 
@@ -72,6 +78,7 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
         }
       }
       _selectedEmployeeId = null;
+      _expandedEmployeeIds.clear();
     });
   }
 
@@ -88,6 +95,7 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
         _selectedYear = result.year;
         _selectedMonth = result.month;
         _selectedEmployeeId = null;
+        _expandedEmployeeIds.clear();
       });
     }
   }
@@ -223,7 +231,12 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
                           summary: summary,
                           selectedEmployeeId: _selectedEmployeeId,
                           onEmployeeSelected: (id) {
-                            setState(() => _selectedEmployeeId = id);
+                            setState(() {
+                              _selectedEmployeeId = id;
+                              if (id != null) {
+                                _expandedEmployeeIds.add(id);
+                              }
+                            });
                           },
                         ),
                       ],
@@ -272,16 +285,24 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
                   ...summaries.asMap().entries.map((entry) {
                     final index = entry.key;
                     final emp = entry.value;
-                    final isSelected = _selectedEmployeeId == emp.employeeId;
+                    final isExpanded =
+                        _expandedEmployeeIds.contains(emp.employeeId);
 
                     return _buildEmployeeCard(
                       emp: emp,
                       rank: index + 1,
-                      isSelected: isSelected,
+                      isExpanded: isExpanded,
                       onTap: () {
                         setState(() {
-                          _selectedEmployeeId =
-                              isSelected ? null : emp.employeeId;
+                          if (isExpanded) {
+                            _expandedEmployeeIds.remove(emp.employeeId);
+                            if (_selectedEmployeeId == emp.employeeId) {
+                              _selectedEmployeeId = null;
+                            }
+                          } else {
+                            _expandedEmployeeIds.add(emp.employeeId);
+                            _selectedEmployeeId = emp.employeeId;
+                          }
                         });
                       },
                     );
@@ -298,7 +319,7 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
   Widget _buildEmployeeCard({
     required EmployeeSalesSummary emp,
     required int rank,
-    required bool isSelected,
+    required bool isExpanded,
     required VoidCallback onTap,
   }) {
     final initial = emp.employeeName.trim().isNotEmpty
@@ -371,12 +392,12 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      elevation: isSelected ? 3 : 1,
+      elevation: isExpanded ? 3 : 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isSelected ? emp.color : Colors.grey.shade200,
-          width: isSelected ? 1.5 : 1,
+          color: isExpanded ? emp.color : Colors.grey.shade200,
+          width: isExpanded ? 1.5 : 1,
         ),
       ),
       child: InkWell(
@@ -384,110 +405,239 @@ class _SalesSummaryScreenState extends ConsumerState<SalesSummaryScreen> {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Cột thứ hạng (chỉ hiển thị #1, #2, #3...)
-              SizedBox(
-                width: 34,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: rankBadge,
+              Row(
+                children: [
+                  // Cột thứ hạng (chỉ hiển thị #1, #2, #3...)
+                  SizedBox(
+                    width: 34,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: rankBadge,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
+                  const SizedBox(width: 8),
 
-              // Avatar nhân viên mang màu của biểu đồ
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: emp.color.withValues(alpha: 0.18),
-                foregroundColor: emp.color,
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                  // Avatar nhân viên mang màu của biểu đồ
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: emp.color.withValues(alpha: 0.18),
+                    foregroundColor: emp.color,
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
+                  const SizedBox(width: 12),
 
-              // Tên & Thanh phần trăm
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  // Tên & Thanh phần trăm
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Biểu tượng workspace_premium đặt ở trước tên nhân viên top 1
-                        if (rank == 1) ...[
-                          const Icon(
-                            Icons.workspace_premium,
-                            size: 18,
-                            color: Colors.amber,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Expanded(
-                          child: Text(
-                            emp.employeeName,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            // Biểu tượng workspace_premium đặt ở trước tên nhân viên top 1
+                            if (rank == 1) ...[
+                              const Icon(
+                                Icons.workspace_premium,
+                                size: 18,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+                            Expanded(
+                              child: Text(
+                                emp.employeeName,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: (emp.percentage / 100).clamp(0.0, 1.0),
+                            minHeight: 6,
+                            backgroundColor: Colors.grey.shade100,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(emp.color),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (emp.percentage / 100).clamp(0.0, 1.0),
-                        minHeight: 6,
-                        backgroundColor: Colors.grey.shade100,
-                        valueColor: AlwaysStoppedAnimation<Color>(emp.color),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Số tiền & Tỷ lệ %
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatCurrency(emp.totalAmount),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.pink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: emp.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _formatPercent(emp.percentage),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: emp.color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+
+                  // Icon chỉ báo mở rộng
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20,
+                    color: isExpanded ? emp.color : Colors.grey.shade400,
+                  ),
+                ],
+              ),
+
+              // Phần xổ xuống: Chi tiết các loại doanh số phát sinh
+              if (isExpanded) ...[
+                const SizedBox(height: 12),
+                Divider(
+                  height: 1,
+                  thickness: 0.8,
+                  color: Colors.grey.shade200,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.category_outlined,
+                      size: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Chi tiết theo loại doanh số:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 14),
-
-              // Số tiền & Tỷ lệ %
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    _formatCurrency(emp.totalAmount),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.pink,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: emp.color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                const SizedBox(height: 6),
+                if (emp.categoryBreakdown.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Text(
-                      _formatPercent(emp.percentage),
+                      'Chưa có phân loại doanh số cụ thể',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: emp.color,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey.shade500,
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  )
+                else
+                  ...emp.categoryBreakdown.map((cat) {
+                    final isNail = cat.categoryName.toLowerCase() == 'nail';
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isNail
+                                  ? Colors.purple.shade50
+                                  : Colors.teal.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isNail
+                                    ? Colors.purple.shade200
+                                    : Colors.teal.shade200,
+                              ),
+                            ),
+                            child: Text(
+                              cat.categoryName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isNail
+                                    ? Colors.purple.shade700
+                                    : Colors.teal.shade700,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _formatCurrency(cat.amount),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.pink.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border:
+                                  Border.all(color: Colors.pink.shade100),
+                            ),
+                            child: Text(
+                              _formatPercent(cat.percentage),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.pink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+              ],
             ],
           ),
         ),

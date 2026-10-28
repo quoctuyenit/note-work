@@ -24,9 +24,11 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
   final NumberFormat _currencyFmt = NumberFormat('#,###', 'vi_VN');
 
   List<Employee> _employees = [];
-  bool _loadingEmployees = true;
+  List<SaleCategory> _categories = [];
+  bool _loadingData = true;
 
   Employee? _selectedEmployee;
+  SaleCategory? _selectedCategory;
   double _amount = 0;
   final TextEditingController _amountCtl = TextEditingController();
   final TextEditingController _noteCtl = TextEditingController();
@@ -45,10 +47,13 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
   }
 
   Future<void> _loadData() async {
-    final list = await widget.repo.getEmployees();
+    final empList = await widget.repo.getEmployees();
+    final catList = await widget.repo.getSaleCategories();
+
     setState(() {
-      _employees = list;
-      _loadingEmployees = false;
+      _employees = empList;
+      _categories = catList;
+      _loadingData = false;
 
       if (widget.existingSale != null) {
         final s = widget.existingSale!;
@@ -57,12 +62,37 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
         _noteCtl.text = s.note ?? '';
 
         try {
-          _selectedEmployee = list.firstWhere((e) => e.id == s.employeeId);
+          _selectedEmployee = empList.firstWhere((e) => e.id == s.employeeId);
         } catch (_) {
-          if (list.isNotEmpty) _selectedEmployee = list.first;
+          if (empList.isNotEmpty) _selectedEmployee = empList.first;
         }
-      } else if (list.isNotEmpty) {
-        _selectedEmployee = list.first;
+
+        // Chọn category khớp với bản ghi hiện tại
+        SaleCategory? matchCat;
+        if (s.categoryId != null) {
+          try {
+            matchCat = catList.firstWhere((c) => c.id == s.categoryId);
+          } catch (_) {}
+        }
+        if (matchCat == null && s.category.isNotEmpty) {
+          try {
+            matchCat = catList.firstWhere(
+                (c) => c.name.toLowerCase() == s.category.toLowerCase());
+          } catch (_) {}
+        }
+        _selectedCategory =
+            matchCat ?? (catList.isNotEmpty ? catList.first : null);
+      } else {
+        if (empList.isNotEmpty) {
+          _selectedEmployee = empList.first;
+        }
+        // Thêm mới: Mặc định chọn "Nail"
+        try {
+          _selectedCategory = catList.firstWhere(
+              (c) => c.name.toLowerCase() == 'nail' || c.isDefault);
+        } catch (_) {
+          _selectedCategory = catList.isNotEmpty ? catList.first : null;
+        }
       }
     });
   }
@@ -109,6 +139,8 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
     }
 
     final note = _noteCtl.text.trim();
+    final categoryName = _selectedCategory?.name ?? 'Nail';
+    final categoryId = _selectedCategory?.id;
 
     try {
       if (widget.existingSale == null) {
@@ -119,6 +151,8 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
           employeeName: _selectedEmployee!.name,
           amount: _amount,
           note: note.isEmpty ? null : note,
+          category: categoryName,
+          categoryId: categoryId,
         );
       } else {
         // Update
@@ -128,6 +162,8 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
           employeeName: _selectedEmployee!.name,
           amount: _amount,
           note: note.isEmpty ? null : note,
+          category: categoryName,
+          categoryId: categoryId,
         );
       }
       if (!mounted) return;
@@ -154,7 +190,7 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
           Text(isEdit ? 'Sửa doanh số' : 'Thêm doanh số'),
         ],
       ),
-      content: _loadingEmployees
+      content: _loadingData
           ? const SizedBox(
               height: 100,
               child: Center(child: CircularProgressIndicator()),
@@ -195,6 +231,77 @@ class _AddOrEditSaleDialogState extends State<AddOrEditSaleDialog> {
                       onChanged: (emp) =>
                           setState(() => _selectedEmployee = emp),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Chọn Loại doanh số
+                    Row(
+                      children: const [
+                        Icon(Icons.spa_outlined, size: 18, color: Colors.pink),
+                        SizedBox(width: 6),
+                        Text(
+                          'Loại doanh số',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    if (_categories.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text('Mặc định: Nail',
+                            style: TextStyle(fontSize: 13)),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: _categories.map((cat) {
+                          final isSelected = _selectedCategory?.id == cat.id ||
+                              (_selectedCategory == null &&
+                                  (cat.isDefault ||
+                                      cat.name.toLowerCase() == 'nail'));
+                          return ChoiceChip(
+                            label: Text(
+                              cat.name,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? Colors.pink.shade800
+                                    : Colors.black87,
+                                fontSize: 13,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: Colors.pink.shade50,
+                            backgroundColor: Colors.grey.shade100,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Colors.pink
+                                    : Colors.grey.shade300,
+                                width: isSelected ? 1.5 : 1.0,
+                              ),
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() => _selectedCategory = cat);
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
                     const SizedBox(height: 16),
 
                     // Nhập số tiền (có tích hợp Calculator UI)

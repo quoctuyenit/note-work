@@ -160,6 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ref.invalidate(completedDaysProvider);
                 ref.invalidate(completedGroupedProvider);
                 ref.invalidate(employeesProvider);
+                ref.invalidate(saleCategoriesProvider);
                 ref.invalidate(defaultSlotsProvider);
                 ref.invalidate(salesDaysProvider);
               });

@@ -198,34 +198,56 @@ class _PieChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
+    final hasMultipleSlices = summaries.length > 1;
+
     for (final emp in summaries) {
-      final sweepAngle = (emp.totalAmount / totalAmount) * 2 * math.pi * progress;
+      final ratio = emp.totalAmount / totalAmount;
+      if (ratio <= 0) continue;
+
+      final isFullCircle = ratio >= 0.9999;
+      final sweepAngle = ratio * 2 * math.pi * progress;
       final isSelected = selectedEmployeeId == emp.employeeId;
 
       final sliceRadius = isSelected ? outerRadius + 4 : outerRadius;
-
-      // Slice Path
-      final path = Path()
-        ..arcTo(
-          Rect.fromCircle(center: center, radius: sliceRadius),
-          startAngle,
-          sweepAngle,
-          false,
-        )
-        ..arcTo(
-          Rect.fromCircle(center: center, radius: innerRadius),
-          startAngle + sweepAngle,
-          -sweepAngle,
-          false,
-        )
-        ..close();
-
       final slicePaint = Paint()
         ..color = emp.color
         ..style = PaintingStyle.fill;
 
-      canvas.drawPath(path, slicePaint);
-      canvas.drawPath(path, separatorPaint);
+      if (isFullCircle && progress >= 0.999) {
+        // Trường hợp chỉ có 1 nhân viên (hoặc 1 nhân viên chiếm 100%) khi animation kết thúc:
+        // Vẽ toàn bộ vòng donut bằng 2 đường tròn đồng tâm với PathFillType.evenOdd
+        // để tránh lỗi Skia/Impeller nuốt mất hình vẽ khi góc arcTo == 2*pi (360 độ).
+        final path = Path()
+          ..addOval(Rect.fromCircle(center: center, radius: sliceRadius))
+          ..addOval(Rect.fromCircle(center: center, radius: innerRadius))
+          ..fillType = PathFillType.evenOdd;
+
+        canvas.drawPath(path, slicePaint);
+      } else {
+        // Giới hạn sweepAngle tối đa không chạm 2*pi để arcTo luôn hợp lệ và không bị suy biến
+        final clampedSweep = math.min(sweepAngle, 2 * math.pi - 0.001);
+
+        final path = Path()
+          ..arcTo(
+            Rect.fromCircle(center: center, radius: sliceRadius),
+            startAngle,
+            clampedSweep,
+            false,
+          )
+          ..arcTo(
+            Rect.fromCircle(center: center, radius: innerRadius),
+            startAngle + clampedSweep,
+            -clampedSweep,
+            false,
+          )
+          ..close();
+
+        canvas.drawPath(path, slicePaint);
+
+        if (hasMultipleSlices && !isFullCircle) {
+          canvas.drawPath(path, separatorPaint);
+        }
+      }
 
       // Vẽ nhãn % lên lát cắt nếu góc đủ rộng (>= 18 độ) và progress gần hoàn thành
       if (sweepAngle >= 0.32 && progress > 0.8) {
@@ -234,8 +256,11 @@ class _PieChartPainter extends CustomPainter {
         final labelX = center.dx + labelRadius * math.cos(midAngle);
         final labelY = center.dy + labelRadius * math.sin(midAngle);
 
-        final pctText =
-            '${emp.percentage.toStringAsFixed(1).replaceAll('.', ',')}%';
+        final fixedPct = emp.percentage.toStringAsFixed(1);
+        final cleanedPct = fixedPct.endsWith('.0')
+            ? fixedPct.substring(0, fixedPct.length - 2)
+            : fixedPct.replaceAll('.', ',');
+        final pctText = '$cleanedPct%';
         final textPainter = TextPainter(
           text: TextSpan(
             text: pctText,

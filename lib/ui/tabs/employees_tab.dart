@@ -81,6 +81,7 @@ class _EmployeesTabState extends ConsumerState<EmployeesTab> {
       try {
         await repo.updateEmployee(emp.id, editCtl.text.trim());
         ref.refresh(employeesProvider);
+        ref.refresh(salesDaysProvider);
       } catch (e) {
         final msg = (e is String)
             ? e

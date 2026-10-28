@@ -20,12 +20,14 @@ class BackupService {
     final slots = await repo.exportBookingSlot();
     final defaults = await repo.exportDefaultSlot();
     final employees = await repo.exportEmployees();
+    final categories = await repo.exportSaleCategories();
     final salesDays = await repo.exportSalesDay();
     final salesRecords = await repo.exportEmployeeSale();
     final counters = {
       'default_slot_id': await repo.getCounter('default_slot_id'),
       'slot_id': await repo.getCounter('slot_id'),
       'employee_id': await repo.getCounter('employee_id'),
+      'sale_category_id': await repo.getCounter('sale_category_id'),
       'sale_id': await repo.getCounter('sale_id'),
     };
     final backupData = {
@@ -33,6 +35,7 @@ class BackupService {
       'booking_slots': slots.map((d) => d.toJson()).toList(),
       'default_slots': defaults.map((d) => d.toJson()).toList(),
       'employees': employees.map((e) => e.toJson()).toList(),
+      'sale_categories': categories.map((c) => c.toJson()).toList(),
       'sales_days': salesDays.map((d) => d.toJson()).toList(),
       'sales_records': salesRecords.map((r) => r.toJson()).toList(),
       'counters': counters,
@@ -73,6 +76,18 @@ class BackupService {
         await repo.restoreEmployee(Employee.fromJson(Map<String, dynamic>.from(raw)));
       }
     }
+    // Restore sale_categories
+    if (data['sale_categories'] != null) {
+      for (var raw in data['sale_categories']) {
+        await repo.restoreSaleCategory(SaleCategory.fromJson(Map<String, dynamic>.from(raw)));
+      }
+    }
+    // Đảm bảo luôn có ít nhất loại mặc định "Nail"
+    final curCats = await repo.getSaleCategories();
+    if (curCats.isEmpty) {
+      await repo.addSaleCategory('Nail');
+    }
+
     // Restore sales_days
     if (data['sales_days'] != null) {
       for (var raw in data['sales_days']) {

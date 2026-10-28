@@ -357,6 +357,12 @@ class EmployeeSale extends HiveObject {
   @HiveField(5)
   String? note;
 
+  @HiveField(6)
+  String category;
+
+  @HiveField(7)
+  int? categoryId;
+
   EmployeeSale({
     required this.id,
     required this.dayId,
@@ -364,6 +370,8 @@ class EmployeeSale extends HiveObject {
     required this.employeeName,
     required this.amount,
     this.note,
+    this.category = 'Nail',
+    this.categoryId,
   });
 
   factory EmployeeSale.fromJson(Map<String, dynamic> json) {
@@ -374,6 +382,8 @@ class EmployeeSale extends HiveObject {
       employeeName: json['employeeName'] ?? '',
       amount: (json['amount'] as num).toDouble(),
       note: json['note'],
+      category: json['category'] ?? 'Nail',
+      categoryId: json['categoryId'],
     );
   }
 
@@ -385,6 +395,8 @@ class EmployeeSale extends HiveObject {
       'employeeName': employeeName,
       'amount': amount,
       'note': note,
+      'category': category,
+      'categoryId': categoryId,
     };
   }
 }
@@ -407,13 +419,15 @@ class EmployeeSaleAdapter extends TypeAdapter<EmployeeSale> {
       employeeName: fields[3] as String,
       amount: (fields[4] as num).toDouble(),
       note: fields[5] as String?,
+      category: (fields[6] as String?) ?? 'Nail',
+      categoryId: fields[7] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, EmployeeSale obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -425,7 +439,76 @@ class EmployeeSaleAdapter extends TypeAdapter<EmployeeSale> {
       ..writeByte(4)
       ..write(obj.amount)
       ..writeByte(5)
-      ..write(obj.note);
+      ..write(obj.note)
+      ..writeByte(6)
+      ..write(obj.category)
+      ..writeByte(7)
+      ..write(obj.categoryId);
+  }
+}
+
+@HiveType(typeId: 6)
+class SaleCategory extends HiveObject {
+  @HiveField(0)
+  int id;
+
+  @HiveField(1)
+  String name;
+
+  @HiveField(2)
+  bool isDefault;
+
+  SaleCategory({
+    required this.id,
+    required this.name,
+    this.isDefault = false,
+  });
+
+  factory SaleCategory.fromJson(Map<String, dynamic> json) {
+    return SaleCategory(
+      id: json['id'],
+      name: json['name'],
+      isDefault: json['isDefault'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'isDefault': isDefault,
+    };
+  }
+}
+
+class SaleCategoryAdapter extends TypeAdapter<SaleCategory> {
+  @override
+  final int typeId = 6;
+
+  @override
+  SaleCategory read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{};
+    for (var i = 0; i < numOfFields; i++) {
+      fields[reader.readByte()] = reader.read();
+    }
+    return SaleCategory(
+      id: fields[0] as int,
+      name: fields[1] as String,
+      isDefault: (fields[2] as bool?) ?? false,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, SaleCategory obj) {
+    writer
+      ..writeByte(3)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.isDefault);
   }
 }
 
@@ -434,6 +517,7 @@ class AppDatabase {
   static const String _slotsBox = 'booking_slots';
   static const String _defaultsBox = 'default_slots';
   static const String _employeesBox = 'employees';
+  static const String _categoriesBox = 'sale_categories';
   static const String _salesDaysBox = 'sales_days';
   static const String _salesRecordsBox = 'sales_records';
   static const String _countersBox = 'counters_box';
@@ -454,6 +538,8 @@ class AppDatabase {
       Hive.registerAdapter(SalesDayAdapter());
     if (!Hive.isAdapterRegistered(5))
       Hive.registerAdapter(EmployeeSaleAdapter());
+    if (!Hive.isAdapterRegistered(6))
+      Hive.registerAdapter(SaleCategoryAdapter());
 
     // Open boxes if not open
     if (!Hive.isBoxOpen(_daysBox)) await Hive.openBox<BookingDay>(_daysBox);
@@ -462,11 +548,41 @@ class AppDatabase {
       await Hive.openBox<DefaultSlot>(_defaultsBox);
     if (!Hive.isBoxOpen(_employeesBox))
       await Hive.openBox<Employee>(_employeesBox);
+    if (!Hive.isBoxOpen(_categoriesBox))
+      await Hive.openBox<SaleCategory>(_categoriesBox);
     if (!Hive.isBoxOpen(_salesDaysBox))
       await Hive.openBox<SalesDay>(_salesDaysBox);
     if (!Hive.isBoxOpen(_salesRecordsBox))
       await Hive.openBox<EmployeeSale>(_salesRecordsBox);
     if (!Hive.isBoxOpen(_countersBox)) await Hive.openBox<int>(_countersBox);
+
+    // Khởi tạo loại doanh số mặc định "Nail" nếu chưa có
+    final catBox = Hive.box<SaleCategory>(_categoriesBox);
+    if (catBox.isEmpty) {
+      await catBox.put(1, SaleCategory(id: 1, name: 'Nail', isDefault: true));
+      final counters = Hive.box<int>(_countersBox);
+      final curCatId = counters.get('sale_category_id', defaultValue: 0) ?? 0;
+      if (curCatId < 1) {
+        await counters.put('sale_category_id', 1);
+      }
+    }
+
+    // Tự động gán category = 'Nail' cho các bản ghi doanh số cũ chưa có category
+    final salesBox = Hive.box<EmployeeSale>(_salesRecordsBox);
+    for (final sale in salesBox.values) {
+      bool changed = false;
+      if (sale.category.isEmpty) {
+        sale.category = 'Nail';
+        changed = true;
+      }
+      if (sale.categoryId == null && sale.category.toLowerCase() == 'nail') {
+        sale.categoryId = 1;
+        changed = true;
+      }
+      if (changed) {
+        await sale.save();
+      }
+    }
   }
 
   // Constructor assumes boxes already opened via init()
@@ -475,6 +591,7 @@ class AppDatabase {
     _slots = Hive.box<BookingSlot>(_slotsBox);
     _defaults = Hive.box<DefaultSlot>(_defaultsBox);
     _employees = Hive.box<Employee>(_employeesBox);
+    _categories = Hive.box<SaleCategory>(_categoriesBox);
     _salesDays = Hive.box<SalesDay>(_salesDaysBox);
     _salesRecords = Hive.box<EmployeeSale>(_salesRecordsBox);
     _counters = Hive.box<int>(_countersBox);
@@ -484,6 +601,7 @@ class AppDatabase {
   late final Box<BookingSlot> _slots;
   late final Box<DefaultSlot> _defaults;
   late final Box<Employee> _employees;
+  late final Box<SaleCategory> _categories;
   late final Box<SalesDay> _salesDays;
   late final Box<EmployeeSale> _salesRecords;
   late final Box<int> _counters;
@@ -643,9 +761,104 @@ class AppDatabase {
   Future<void> updateEmployee(int id, {required String name}) async {
     final emp = _employees.get(id);
     if (emp == null) return;
-    emp.name = name;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw 'Lỗi: Tên nhân viên không được để trống.';
+    emp.name = trimmed;
     await emp.save();
+
+    // Đồng bộ tên nhân viên trong toàn bộ các bản ghi doanh số liên quan
+    final records =
+        _salesRecords.values.where((s) => s.employeeId == id).toList();
+    for (final s in records) {
+      s.employeeName = trimmed;
+      await s.save();
+    }
   }
+
+  // SaleCategories
+  Future<int> insertSaleCategory(
+      {required String name, bool isDefault = false}) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw 'Lỗi: Tên loại doanh số không được để trống.';
+    final existing = _categories.values
+        .any((c) => c.name.toLowerCase() == trimmed.toLowerCase());
+    if (existing) throw 'Lỗi: Loại doanh số "$trimmed" đã tồn tại.';
+
+    final newId = _nextId('sale_category_id');
+    final cat = SaleCategory(id: newId, name: trimmed, isDefault: isDefault);
+    await _categories.put(newId, cat);
+    return newId;
+  }
+
+  Future<List<SaleCategory>> getAllSaleCategories() async {
+    final list = _categories.values.toList();
+    list.sort((a, b) {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+    return list;
+  }
+
+  Future<void> updateSaleCategory(int id, {required String name}) async {
+    final cat = _categories.get(id);
+    if (cat == null) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) throw 'Lỗi: Tên loại doanh số không được để trống.';
+
+    final duplicate = _categories.values.any((c) =>
+        c.id != id && c.name.toLowerCase() == trimmed.toLowerCase());
+    if (duplicate) throw 'Lỗi: Loại doanh số "$trimmed" đã tồn tại.';
+
+    final oldName = cat.name;
+    cat.name = trimmed;
+    await cat.save();
+
+    // Đồng bộ tên loại doanh số trong tất cả bản ghi doanh số liên quan
+    final records = _salesRecords.values
+        .where((s) => s.categoryId == id || s.category == oldName)
+        .toList();
+    for (final s in records) {
+      s.categoryId = id;
+      s.category = trimmed;
+      await s.save();
+    }
+  }
+
+  Future<void> deleteSaleCategory(int id) async {
+    final cat = _categories.get(id);
+    if (cat == null) return;
+    if (cat.isDefault || cat.name.toLowerCase() == 'nail') {
+      throw 'Lỗi: Không thể xóa loại doanh số mặc định (Nail).';
+    }
+
+    SaleCategory? defaultCat;
+    try {
+      defaultCat = _categories.values.firstWhere((c) => c.isDefault);
+    } catch (_) {
+      try {
+        defaultCat = _categories.values
+            .firstWhere((c) => c.name.toLowerCase() == 'nail');
+      } catch (_) {
+        defaultCat = null;
+      }
+    }
+    final fallbackName = defaultCat?.name ?? 'Nail';
+    final fallbackId = defaultCat?.id ?? 1;
+
+    final records = _salesRecords.values
+        .where((s) => s.categoryId == id || s.category == cat.name)
+        .toList();
+    for (final s in records) {
+      s.category = fallbackName;
+      s.categoryId = fallbackId;
+      await s.save();
+    }
+
+    await _categories.delete(id);
+  }
+
+  Future<SaleCategory?> getSaleCategoryById(int id) async => _categories.get(id);
 
   // SalesDays
   Future<void> insertSalesDay({required String id, required DateTime date}) async {
@@ -699,6 +912,8 @@ class AppDatabase {
     required String employeeName,
     required double amount,
     String? note,
+    String category = 'Nail',
+    int? categoryId,
   }) async {
     final newId = _nextId('sale_id');
     final sale = EmployeeSale(
@@ -708,6 +923,8 @@ class AppDatabase {
       employeeName: employeeName,
       amount: amount,
       note: note,
+      category: category,
+      categoryId: categoryId,
     );
     await _salesRecords.put(newId, sale);
     return newId;
@@ -725,6 +942,8 @@ class AppDatabase {
     required String employeeName,
     required double amount,
     String? note,
+    String? category,
+    int? categoryId,
   }) async {
     final s = _salesRecords.get(id);
     if (s == null) return;
@@ -732,6 +951,8 @@ class AppDatabase {
     s.employeeName = employeeName;
     s.amount = amount;
     s.note = note;
+    if (category != null) s.category = category;
+    if (categoryId != null) s.categoryId = categoryId;
     await s.save();
   }
 
@@ -756,6 +977,10 @@ class AppDatabase {
     return _employees.values.toList();
   }
 
+  Future<List<SaleCategory>> exportSaleCategories() async {
+    return _categories.values.toList();
+  }
+
   Future<List<SalesDay>> exportSalesDays() async {
     return _salesDays.values.toList();
   }
@@ -772,6 +997,7 @@ class AppDatabase {
     await _slots.clear();
     await _defaults.clear();
     await _employees.clear();
+    await _categories.clear();
     await _salesDays.clear();
     await _salesRecords.clear();
     await _counters.clear();
@@ -792,6 +1018,10 @@ class AppDatabase {
 
   Future<void> addEmployee(Employee emp) async {
     return createOrUpdate(_employees, emp);
+  }
+
+  Future<void> addSaleCategory(SaleCategory cat) async {
+    return createOrUpdate(_categories, cat);
   }
 
   Future<void> addSalesDay(SalesDay day) async {

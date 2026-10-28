@@ -262,6 +262,13 @@ class BookingRepository {
     await db.deleteSalesDay(dayId);
   }
 
+  // SaleCategory
+  Future<List<SaleCategory>> getSaleCategories() => db.getAllSaleCategories();
+  Future<int> addSaleCategory(String name) => db.insertSaleCategory(name: name);
+  Future<void> updateSaleCategory(int id, String name) =>
+      db.updateSaleCategory(id, name: name);
+  Future<void> deleteSaleCategory(int id) => db.deleteSaleCategory(id);
+
   // EmployeeSale
   Future<List<EmployeeSale>> getSalesForDay(String dayId) =>
       db.getSalesByDay(dayId);
@@ -272,6 +279,8 @@ class BookingRepository {
     required String employeeName,
     required double amount,
     String? note,
+    String category = 'Nail',
+    int? categoryId,
   }) async {
     if (amount <= 0) {
       throw 'Lỗi: Số tiền phải lớn hơn 0.';
@@ -282,6 +291,8 @@ class BookingRepository {
       employeeName: employeeName,
       amount: amount,
       note: note,
+      category: category,
+      categoryId: categoryId,
     );
   }
 
@@ -291,6 +302,8 @@ class BookingRepository {
     required String employeeName,
     required double amount,
     String? note,
+    String? category,
+    int? categoryId,
   }) async {
     if (amount <= 0) {
       throw 'Lỗi: Số tiền phải lớn hơn 0.';
@@ -301,6 +314,8 @@ class BookingRepository {
       employeeName: employeeName,
       amount: amount,
       note: note,
+      category: category,
+      categoryId: categoryId,
     );
   }
 
@@ -336,12 +351,18 @@ class BookingRepository {
 
     final Map<int, String> empNames = {};
     final Map<int, double> empTotals = {};
+    final Map<int, Map<String, double>> empCategoryTotals = {};
 
     for (final day in matchingDays) {
       final records = await db.getSalesByDay(day.id);
       for (final r in records) {
         empNames[r.employeeId] = r.employeeName;
         empTotals[r.employeeId] = (empTotals[r.employeeId] ?? 0.0) + r.amount;
+
+        final catMap = empCategoryTotals.putIfAbsent(r.employeeId, () => {});
+        final catName =
+            r.category.trim().isNotEmpty ? r.category.trim() : 'Nail';
+        catMap[catName] = (catMap[catName] ?? 0.0) + r.amount;
       }
     }
 
@@ -356,12 +377,28 @@ class BookingRepository {
       final entry = sortedEntries[i];
       final pct = grandTotal > 0 ? (entry.value / grandTotal) * 100 : 0.0;
       final color = _chartPalette[i % _chartPalette.length];
+
+      // Chi tiết loại doanh số của nhân viên này
+      final catBreakdown = <CategorySalesSummary>[];
+      final catTotals = empCategoryTotals[entry.key] ?? {};
+      final sortedCats = catTotals.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      for (final cat in sortedCats) {
+        final catPct = entry.value > 0 ? (cat.value / entry.value) * 100 : 0.0;
+        catBreakdown.add(CategorySalesSummary(
+          categoryName: cat.key,
+          amount: cat.value,
+          percentage: catPct,
+        ));
+      }
+
       summaries.add(EmployeeSalesSummary(
         employeeId: entry.key,
         employeeName: empNames[entry.key] ?? 'Nhân viên ${entry.key}',
         totalAmount: entry.value,
         percentage: pct,
         color: color,
+        categoryBreakdown: catBreakdown,
       ));
     }
 
@@ -378,6 +415,7 @@ class BookingRepository {
   Future<List<BookingSlot>> exportBookingSlot() => db.exportBookingSlots();
   Future<List<DefaultSlot>> exportDefaultSlot() => db.exportDefaultSlots();
   Future<List<Employee>> exportEmployees() => db.exportEmployees();
+  Future<List<SaleCategory>> exportSaleCategories() => db.exportSaleCategories();
   Future<List<SalesDay>> exportSalesDay() => db.exportSalesDays();
   Future<List<EmployeeSale>> exportEmployeeSale() => db.exportEmployeeSales();
 
@@ -390,6 +428,7 @@ class BookingRepository {
   Future<void> restoreSlot(slot) => db.addSlot(slot);
   Future<void> restoreDefaultSlot(DefaultSlot slot) => db.addDefaultSlot(slot);
   Future<void> restoreEmployee(Employee emp) => db.addEmployee(emp);
+  Future<void> restoreSaleCategory(SaleCategory cat) => db.addSaleCategory(cat);
   Future<void> restoreSalesDay(SalesDay day) => db.addSalesDay(day);
   Future<void> restoreEmployeeSale(EmployeeSale sale) => db.addEmployeeSale(sale);
   Future<void> restoreCounter(String key, int value) =>

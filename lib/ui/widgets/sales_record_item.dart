@@ -70,6 +70,34 @@ class SalesRecordItem extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
+                    if (sale.category.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: sale.category.toLowerCase() == 'nail'
+                              ? Colors.purple.shade50
+                              : Colors.teal.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: sale.category.toLowerCase() == 'nail'
+                                ? Colors.purple.shade200
+                                : Colors.teal.shade200,
+                          ),
+                        ),
+                        child: Text(
+                          sale.category,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: sale.category.toLowerCase() == 'nail'
+                                ? Colors.purple.shade700
+                                : Colors.teal.shade700,
+                          ),
+                        ),
+                      ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,

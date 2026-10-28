@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
 
+class CategorySalesSummary {
+  final String categoryName;
+  final double amount;
+  final double percentage; // 0..100 so với tổng doanh số của nhân viên đó
+
+  CategorySalesSummary({
+    required this.categoryName,
+    required this.amount,
+    required this.percentage,
+  });
+}
+
 class EmployeeSalesSummary {
   final int employeeId;
   final String employeeName;
   final double totalAmount;
   final double percentage; // 0..100
   final Color color;
+  final List<CategorySalesSummary> categoryBreakdown;
 
   EmployeeSalesSummary({
     required this.employeeId,
@@ -13,6 +26,7 @@ class EmployeeSalesSummary {
     required this.totalAmount,
     required this.percentage,
     required this.color,
+    this.categoryBreakdown = const [],
   });
 }
 
