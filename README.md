@@ -17,5 +17,6 @@ samples, guidance on mobile development, and a full API reference.
 
 
 #deploy code
-`run deploy.ps1`
-check https://cdn.jsdelivr.net/gh/quoctuyenit/note-work@gh-pages/main.dart.js
+- `run Windows PowerShell as administrator`
+- `run ./deploy.ps1`
+- check https://cdn.jsdelivr.net/gh/quoctuyenit/note-work@gh-pages/main.dart.js

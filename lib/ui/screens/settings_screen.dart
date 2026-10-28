@@ -43,7 +43,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           tabs: const [
             Tab(text: 'Khung giờ'),
             Tab(text: 'Nhân viên'),
-            Tab(text: 'Loại doanh số'),
+            Tab(text: 'Loại d.số'),
             Tab(text: 'Backup'),
           ],
         ),
